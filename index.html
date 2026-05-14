@@ -30,13 +30,6 @@ body {
 h1 {
   text-align: center;
   font-family: Playfair Display;
-  margin-bottom: 5px;
-}
-
-.date {
-  text-align: center;
-  opacity: 0.6;
-  margin-bottom: 20px;
 }
 
 .section-title {
@@ -47,7 +40,6 @@ h1 {
 }
 
 /* SCORES */
-
 .card {
   background: white;
   border: 1px solid #0001;
@@ -55,12 +47,24 @@ h1 {
   margin-top: 10px;
 }
 
-/* STANDINGS */
+/* ---------------- CLEAN STANDINGS (FIXED LAYOUT) ---------------- */
+
+.standings-league {
+  margin-top: 15px;
+}
+
+.league-title {
+  font-weight: bold;
+  font-size: 16px;
+  margin: 10px 0;
+  border-bottom: 2px solid #0002;
+  padding-bottom: 4px;
+}
 
 .division-block {
-  margin-top: 15px;
   background: white;
   border: 1px solid #0001;
+  margin-bottom: 12px;
   padding: 10px;
 }
 
@@ -77,6 +81,10 @@ h1 {
   grid-template-columns: 1fr auto;
   font-size: 13px;
   padding: 3px 0;
+}
+
+.stand-row span:last-child {
+  text-align: right;
 }
 
 /* LEADERS */
@@ -111,7 +119,6 @@ h1 {
 <div class="page">
 
 <h1>The Morning Box Scores</h1>
-<div class="date" id="date"></div>
 
 <div class="section-title">SCORES</div>
 <div id="scores"></div>
@@ -137,9 +144,6 @@ async function load() {
   const dd = String(yesterday.getDate()).padStart(2,'0');
 
   const dateStr = `${yyyy}-${mm}-${dd}`;
-
-  document.getElementById("date").innerText =
-    yesterday.toDateString();
 
   const scoresURL =
     `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}`;
@@ -183,7 +187,7 @@ async function load() {
     scoresDiv.innerHTML = "<div class='card'>Scores unavailable</div>";
   }
 
-  // ---------------- STANDINGS (DIVISIONS + WILDCARD + GB) ----------------
+  // ---------------- STANDINGS (PROPER STRUCTURE FIX) ----------------
   try {
 
     const res = await fetch(standingsURL);
@@ -191,47 +195,47 @@ async function load() {
 
     const records = data.records || [];
 
-    const container = standingsDiv;
+    const container = document.getElementById("standings");
 
-    const grouped = {
-      "AL East": [],
-      "AL Central": [],
-      "AL West": [],
-      "NL East": [],
-      "NL Central": [],
-      "NL West": [],
-      "AL Wild Card": [],
-      "NL Wild Card": []
+    const leagues = {
+      "American League": [],
+      "National League": []
     };
 
-    records.forEach(div => {
+    records.forEach(r => {
 
-      const type = div.standingsType || "";
-      const name = div.division?.name || "";
+      const leagueName = r.league?.name || "League";
 
-      let key = name;
+      if (!leagues[leagueName]) leagues[leagueName] = [];
 
-      if (type.includes("wildCard")) {
-        key = name.includes("American") ? "AL Wild Card" : "NL Wild Card";
-      }
-
-      if (!grouped[key]) grouped[key] = [];
-
-      grouped[key].push(div);
+      leagues[leagueName].push(r);
 
     });
 
-    Object.keys(grouped).forEach(groupName => {
+    Object.keys(leagues).forEach(leagueName => {
 
-      const divisions = grouped[groupName];
-      if (!divisions.length) return;
+      const leagueBlock = document.createElement("div");
+      leagueBlock.className = "standings-league";
 
-      const block = document.createElement("div");
-      block.className = "division-block";
+      const leagueTitle = document.createElement("div");
+      leagueTitle.className = "league-title";
+      leagueTitle.innerText = leagueName;
 
-      block.innerHTML = `<div class="division-title">${groupName}</div>`;
+      leagueBlock.appendChild(leagueTitle);
 
-      divisions.forEach(div => {
+      leagues[leagueName].forEach(div => {
+
+        const divBlock = document.createElement("div");
+        divBlock.className = "division-block";
+
+        const divName =
+          div.division?.name || "Division";
+
+        const title = document.createElement("div");
+        title.className = "division-title";
+        title.innerText = divName;
+
+        divBlock.appendChild(title);
 
         (div.teamRecords || []).forEach(t => {
 
@@ -248,13 +252,15 @@ async function load() {
             <span>${t.wins}-${t.losses} (${gb} GB)</span>
           `;
 
-          block.appendChild(row);
+          divBlock.appendChild(row);
 
         });
 
+        leagueBlock.appendChild(divBlock);
+
       });
 
-      container.appendChild(block);
+      container.appendChild(leagueBlock);
 
     });
 
@@ -262,7 +268,7 @@ async function load() {
     standingsDiv.innerHTML = "<div class='card'>Standings unavailable</div>";
   }
 
-  // ---------------- LEAGUE LEADERS (FIXED + CLEAN OUTPUT) ----------------
+  // ---------------- LEAGUE LEADERS (UNCHANGED STABLE VERSION) ----------------
 
   const leaderEndpoints = [
     { title: "Batting Average", group: "hitting", stat: "avg", type: "avg" },
@@ -300,15 +306,12 @@ async function load() {
 
         let valueRaw = p.stat?.[cat.stat];
 
-        let value;
-
-        if (cat.type === "int") {
-          value = parseInt(valueRaw || 0);
-        } else if (cat.type === "float") {
-          value = parseFloat(valueRaw || 0).toFixed(2);
-        } else {
-          value = valueRaw;
-        }
+        let value =
+          cat.type === "int"
+            ? parseInt(valueRaw || 0)
+            : cat.type === "float"
+              ? parseFloat(valueRaw || 0).toFixed(2)
+              : valueRaw;
 
         row.innerHTML = `
           <span>${name}</span>
