@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 
-<meta charset="UTF-8">
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
 <title>The Morning Box Scores</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -21,183 +20,125 @@
 }
 
 body {
-
   margin: 0;
-
   padding: 20px;
-
   background: #e9e1cf;
-
   font-family: 'IBM Plex Mono', monospace;
-
   color: #171717;
-
 }
 
 .page {
-
   max-width: 760px;
-
   margin: auto;
-
   background: #f8f4ea;
-
   padding: 28px 24px 60px;
-
   border: 1px solid rgba(0,0,0,0.1);
-
-  box-shadow:
-    0 4px 12px rgba(0,0,0,0.08),
-    0 20px 40px rgba(0,0,0,0.08);
-
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 20px 40px rgba(0,0,0,0.08);
 }
 
 .masthead {
-
   text-align: center;
-
   border-bottom: 3px double #111;
-
   padding-bottom: 24px;
-
   margin-bottom: 40px;
-
 }
 
 .date {
-
   font-size: 0.8rem;
-
   letter-spacing: 3px;
-
   opacity: 0.6;
-
   margin-bottom: 12px;
-
 }
 
 h1 {
-
   margin: 0;
-
   font-size: 3rem;
-
   font-family: 'Playfair Display', serif;
-
 }
 
 .tagline {
-
   margin-top: 16px;
-
   font-style: italic;
-
   opacity: 0.65;
-
 }
 
 .section-title {
-
   margin-top: 40px;
-
   margin-bottom: 20px;
-
   padding-bottom: 10px;
-
   border-bottom: 1px solid rgba(0,0,0,0.15);
-
   font-size: 1.1rem;
-
   letter-spacing: 1px;
-
 }
 
 .game-card {
-
   background: rgba(255,255,255,0.5);
-
   border: 1px solid rgba(0,0,0,0.08);
-
   border-radius: 8px;
-
   padding: 16px;
-
   margin-bottom: 14px;
-
 }
 
 .team-row {
-
   display: flex;
-
   justify-content: space-between;
-
-  align-items: center;
-
   padding: 6px 0;
-
 }
 
 .team-name {
-
   font-size: 1rem;
-
 }
 
 .score {
-
   font-size: 1.5rem;
-
   font-weight: bold;
-
-}
-
-.winner .team-name {
-
-  font-weight: bold;
-
 }
 
 .status {
-
   margin-top: 12px;
-
   padding-top: 10px;
-
   border-top: 1px dashed rgba(0,0,0,0.15);
-
   opacity: 0.6;
-
   font-size: 0.8rem;
+}
 
+.division {
+  margin-bottom: 28px;
+}
+
+.division-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+  border-bottom: 1px solid rgba(0,0,0,0.15);
+  padding-bottom: 6px;
+}
+
+.standing-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px dotted rgba(0,0,0,0.1);
+  font-size: 0.92rem;
 }
 
 .footer {
-
   margin-top: 60px;
-
   text-align: center;
-
   opacity: 0.45;
-
   font-size: 0.8rem;
+}
 
+.error {
+  opacity: 0.6;
+  padding: 10px 0;
 }
 
 @media (max-width: 640px) {
-
-  body {
-    padding: 10px;
-  }
-
-  .page {
-    padding: 20px 16px 40px;
-  }
-
-  h1 {
-    font-size: 2.2rem;
-  }
-
+  body { padding: 10px; }
+  .page { padding: 20px 16px 40px; }
+  h1 { font-size: 2.2rem; }
+  .score { font-size: 1.2rem; }
 }
 
 </style>
@@ -215,16 +156,16 @@ h1 {
     <h1>The Morning Box Scores</h1>
 
     <div class="tagline">
-      Yesterday's baseball. Nothing else.
+      Yesterday’s baseball. Nothing else.
     </div>
 
   </div>
 
-  <div class="section-title">
-    FINAL SCORES
-  </div>
-
+  <div class="section-title">FINAL SCORES</div>
   <div id="scores"></div>
+
+  <div class="section-title">STANDINGS</div>
+  <div id="standings"></div>
 
   <div class="footer">
     Printed digitally each morning with coffee.
@@ -234,125 +175,134 @@ h1 {
 
 <script>
 
-async function loadScores() {
+async function load() {
 
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const yyyy = yesterday.getFullYear();
+  const mm = String(yesterday.getMonth() + 1).padStart(2,'0');
+  const dd = String(yesterday.getDate()).padStart(2,'0');
+
+  const apiDate = `${yyyy}-${mm}-${dd}`;
+
+  document.getElementById('date').innerText =
+    yesterday.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    }).toUpperCase();
+
+  const scoresURL =
+    `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${apiDate}`;
+
+  const standingsURL =
+    `https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${yyyy}`;
+
+  const scoresDiv = document.getElementById('scores');
+  const standingsDiv = document.getElementById('standings');
+
+  scoresDiv.innerHTML = '';
+  standingsDiv.innerHTML = '';
+
+  // ---------------- SCORES ----------------
   try {
 
-    const yesterday = new Date();
+    const res = await fetch(scoresURL);
+    const data = await res.json();
 
-    yesterday.setDate(yesterday.getDate() - 1);
+    if (data.dates?.length) {
 
-    const formattedDate =
-      yesterday.toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric'
+      data.dates[0].games.forEach(g => {
+
+        const away = g.teams.away.team.name;
+        const home = g.teams.home.team.name;
+
+        const a = g.teams.away.score ?? 0;
+        const h = g.teams.home.score ?? 0;
+
+        const status = g.status.detailedState;
+
+        const card = document.createElement('div');
+        card.className = 'game-card';
+
+        card.innerHTML = `
+          <div class="team-row">
+            <div class="team-name">${away}</div>
+            <div class="score">${a}</div>
+          </div>
+          <div class="team-row">
+            <div class="team-name">${home}</div>
+            <div class="score">${h}</div>
+          </div>
+          <div class="status">${status}</div>
+        `;
+
+        scoresDiv.appendChild(card);
+
       });
 
-    document.getElementById('date').innerText =
-      formattedDate.toUpperCase();
-
-    const yyyy = yesterday.getFullYear();
-
-    const mm = String(
-      yesterday.getMonth() + 1
-    ).padStart(2, '0');
-
-    const dd = String(
-      yesterday.getDate()
-    ).padStart(2, '0');
-
-    const apiDate = `${yyyy}-${mm}-${dd}`;
-
-    const response =
-      await fetch(
-        `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${apiDate}`
-      );
-
-    const data = await response.json();
-
-    const scores =
-      document.getElementById('scores');
-
-    if (
-      !data.dates ||
-      data.dates.length === 0
-    ) {
-
-      scores.innerHTML =
-        '<p>No games found.</p>';
-
-      return;
-
+    } else {
+      scoresDiv.innerHTML = `<div class="error">No games found.</div>`;
     }
 
-    const games = data.dates[0].games;
+  } catch(e) {
+    scoresDiv.innerHTML = `<div class="error">Scores unavailable.</div>`;
+  }
 
-    games.forEach(game => {
+  // ---------------- STANDINGS ----------------
+  try {
 
-      const away =
-        game.teams.away.team.name;
+    const res = await fetch(standingsURL);
+    const data = await res.json();
 
-      const home =
-        game.teams.home.team.name;
+    if (data.records?.length) {
 
-      const awayScore =
-        game.teams.away.score ?? 0;
+      data.records.forEach(div => {
 
-      const homeScore =
-        game.teams.home.score ?? 0;
+        const block = document.createElement('div');
+        block.className = 'division';
 
-      const status =
-        game.status.detailedState;
+        const name =
+          div.division.name
+            .replace('American League','AL')
+            .replace('National League','NL');
 
-      const awayWinner =
-        awayScore > homeScore
-          ? 'winner'
-          : '';
+        block.innerHTML =
+          `<div class="division-name">${name}</div>`;
 
-      const homeWinner =
-        homeScore > awayScore
-          ? 'winner'
-          : '';
+        div.teamRecords.forEach(t => {
 
-      const card =
-        document.createElement('div');
+          const row = document.createElement('div');
+          row.className = 'standing-row';
 
-      card.className = 'game-card';
+          row.innerHTML = `
+            <span>${t.team.name}</span>
+            <span>${t.wins}-${t.losses}</span>
+          `;
 
-      card.innerHTML = `
-        <div class="team-row ${awayWinner}">
-          <div class="team-name">${away}</div>
-          <div class="score">${awayScore}</div>
-        </div>
+          block.appendChild(row);
 
-        <div class="team-row ${homeWinner}">
-          <div class="team-name">${home}</div>
-          <div class="score">${homeScore}</div>
-        </div>
+        });
 
-        <div class="status">
-          ${status}
-        </div>
-      `;
+        standingsDiv.appendChild(block);
 
-      scores.appendChild(card);
+      });
 
-    });
+    } else {
+      standingsDiv.innerHTML =
+        `<div class="error">Standings unavailable.</div>`;
+    }
 
-  } catch(error) {
-
-    document.getElementById('scores').innerHTML =
-      '<p>Unable to load MLB scores.</p>';
-
-    console.error(error);
-
+  } catch(e) {
+    standingsDiv.innerHTML =
+      `<div class="error">Standings unavailable.</div>`;
   }
 
 }
 
-loadScores();
+load();
 
 </script>
 
