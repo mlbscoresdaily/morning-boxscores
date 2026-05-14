@@ -10,8 +10,6 @@
 
 <style>
 
-/* ---------------- DARK MODE BASE ---------------- */
-
 body {
   margin: 0;
   padding: 18px;
@@ -26,33 +24,19 @@ body {
   background: #161a22;
   padding: 25px;
   border: 1px solid #2a2f3a;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
 }
 
 h1 {
   text-align: center;
   font-family: Playfair Display;
-  margin-bottom: 5px;
-  color: #ffffff;
 }
-
-.date {
-  text-align: center;
-  opacity: 0.6;
-  margin-bottom: 20px;
-}
-
-/* ---------------- SECTION TITLES ---------------- */
 
 .section-title {
   margin-top: 30px;
   border-bottom: 1px solid #2a2f3a;
   padding-bottom: 5px;
   font-weight: bold;
-  color: #d6d6d6;
 }
-
-/* ---------------- SCORES ---------------- */
 
 .card {
   background: #1c2230;
@@ -63,33 +47,26 @@ h1 {
 
 /* ---------------- STANDINGS ---------------- */
 
-.standings-league {
-  margin-top: 15px;
-}
-
 .league-title {
   font-weight: bold;
   font-size: 16px;
-  margin: 10px 0;
+  margin-top: 20px;
   border-bottom: 2px solid #2a2f3a;
-  padding-bottom: 4px;
-  color: #ffffff;
+  padding-bottom: 5px;
 }
 
 .division-block {
   background: #1c2230;
   border: 1px solid #2a2f3a;
-  margin-bottom: 12px;
+  margin-top: 10px;
   padding: 10px;
 }
 
 .division-title {
   font-weight: bold;
-  font-size: 14px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   border-bottom: 1px solid #2a2f3a;
   padding-bottom: 4px;
-  color: #cfcfcf;
 }
 
 .stand-row {
@@ -99,12 +76,7 @@ h1 {
   padding: 3px 0;
 }
 
-.stand-row span:last-child {
-  text-align: right;
-  opacity: 0.9;
-}
-
-/* ---------------- LEADERS ---------------- */
+/* LEADERS */
 
 .leader-card {
   background: #1c2230;
@@ -118,14 +90,13 @@ h1 {
   margin-bottom: 6px;
   border-bottom: 1px solid #2a2f3a;
   padding-bottom: 4px;
-  color: #ffffff;
 }
 
 .row {
   display: flex;
   justify-content: space-between;
-  padding: 3px 0;
   font-size: 13px;
+  padding: 3px 0;
 }
 
 </style>
@@ -137,7 +108,6 @@ h1 {
 <div class="page">
 
 <h1>The Morning Box Scores</h1>
-<div class="date" id="date"></div>
 
 <div class="section-title">SCORES</div>
 <div id="scores"></div>
@@ -164,18 +134,11 @@ async function load() {
 
   const dateStr = `${yyyy}-${mm}-${dd}`;
 
-  document.getElementById("date").innerText =
-    yesterday.toDateString();
-
   const scoresURL =
     `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}`;
 
   const standingsURL =
     `https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${yyyy}`;
-
-  const scoresDiv = document.getElementById("scores");
-  const standingsDiv = document.getElementById("standings");
-  const leadersDiv = document.getElementById("leaders");
 
   // ---------------- SCORES ----------------
   try {
@@ -201,15 +164,16 @@ async function load() {
         </div>
       `;
 
-      scoresDiv.appendChild(card);
+      document.getElementById("scores").appendChild(card);
 
     });
 
   } catch {
-    scoresDiv.innerHTML = "<div class='card'>Scores unavailable</div>";
+    document.getElementById("scores").innerHTML =
+      "<div class='card'>Scores unavailable</div>";
   }
 
-  // ---------------- STANDINGS (FULL DIVISION NAMES + WILDCARD) ----------------
+  // ---------------- HARD-MAPPED STANDINGS (FIXED DIVISIONS) ----------------
 
   try {
 
@@ -218,89 +182,77 @@ async function load() {
 
     const records = data.records || [];
 
-    const container = document.getElementById("standings");
+    const standingsDiv = document.getElementById("standings");
 
-    const formatDivisionName = (name) => {
-      if (!name) return "Division";
-
-      if (name.includes("American League")) {
-        return "American League " + name.split("American League")[1].trim();
-      }
-
-      if (name.includes("National League")) {
-        return "National League " + name.split("National League")[1].trim();
-      }
-
-      return name;
-    };
-
-    const leagues = {
-      "American League": [],
-      "National League": []
+    // HARD MAP DIVISIONS (this fixes your problem permanently)
+    const divisionMap = {
+      "American League East": [],
+      "American League Central": [],
+      "American League West": [],
+      "National League East": [],
+      "National League Central": [],
+      "National League West": [],
+      "American League Wild Card": [],
+      "National League Wild Card": []
     };
 
     records.forEach(r => {
-      const leagueName = r.league?.name || "League";
-      if (!leagues[leagueName]) leagues[leagueName] = [];
-      leagues[leagueName].push(r);
+
+      const league = r.league?.name || "";
+      const div = r.division?.name || "";
+      const type = r.standingsType || "";
+
+      let key = league + " " + div;
+
+      if (type === "wildCardStandings") {
+        key = league + " Wild Card";
+      }
+
+      if (!divisionMap[key]) divisionMap[key] = [];
+
+      divisionMap[key].push(...(r.teamRecords || []));
+
     });
 
-    Object.keys(leagues).forEach(leagueName => {
+    Object.keys(divisionMap).forEach(divName => {
 
-      const leagueBlock = document.createElement("div");
-      leagueBlock.className = "standings-league";
+      if (!divisionMap[divName].length) return;
 
-      const leagueTitle = document.createElement("div");
-      leagueTitle.className = "league-title";
-      leagueTitle.innerText = leagueName;
+      const block = document.createElement("div");
+      block.className = "division-block";
 
-      leagueBlock.appendChild(leagueTitle);
+      const title = document.createElement("div");
+      title.className = "division-title";
+      title.innerText = divName;
 
-      leagues[leagueName].forEach(div => {
+      block.appendChild(title);
 
-        const divBlock = document.createElement("div");
-        divBlock.className = "division-block";
+      divisionMap[divName].forEach(t => {
 
-        const divName =
-          div.standingsType === "wildCard"
-            ? leagueName + " Wild Card"
-            : formatDivisionName(div.division?.name);
+        const row = document.createElement("div");
+        row.className = "stand-row";
 
-        const title = document.createElement("div");
-        title.className = "division-title";
-        title.innerText = divName;
+        const gb =
+          t.divisionGamesBack ??
+          t.wildCardGamesBack ??
+          "-";
 
-        divBlock.appendChild(title);
+        row.innerHTML = `
+          <span>${t.team.name}</span>
+          <span>${t.wins}-${t.losses} (${gb} GB)</span>
+        `;
 
-        (div.teamRecords || []).forEach(t => {
-
-          const row = document.createElement("div");
-          row.className = "stand-row";
-
-          const gb =
-            t.divisionGamesBack ??
-            t.wildCardGamesBack ??
-            "-";
-
-          row.innerHTML = `
-            <span>${t.team.name}</span>
-            <span>${t.wins}-${t.losses} (${gb} GB)</span>
-          `;
-
-          divBlock.appendChild(row);
-
-        });
-
-        leagueBlock.appendChild(divBlock);
+        block.appendChild(row);
 
       });
 
-      container.appendChild(leagueBlock);
+      standingsDiv.appendChild(block);
 
     });
 
   } catch {
-    standingsDiv.innerHTML = "<div class='card'>Standings unavailable</div>";
+    document.getElementById("standings").innerHTML =
+      "<div class='card'>Standings unavailable</div>";
   }
 
   // ---------------- LEAGUE LEADERS (UNCHANGED STABLE VERSION) ----------------
@@ -314,6 +266,8 @@ async function load() {
     { title: "ERA", group: "pitching", stat: "era", type: "float" },
     { title: "WHIP", group: "pitching", stat: "whip", type: "float" }
   ];
+
+  const leadersDiv = document.getElementById("leaders");
 
   for (const cat of leaderEndpoints) {
 
