@@ -1,13 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0"/>
 
   <title>The Morning Box Scores</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="preconnect"
+        href="https://fonts.googleapis.com">
+
+  <link rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin>
+
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
 
   <style>
 
@@ -16,64 +27,99 @@
     }
 
     body {
+
       margin: 0;
-      background: #efe6d1;
-      color: #161616;
-      font-family: 'IBM Plex Mono', monospace;
+
       padding: 20px;
+
+      background: #e9e1cf;
+
+      color: #171717;
+
+      font-family: 'IBM Plex Mono', monospace;
+
     }
 
     .page {
 
       max-width: 760px;
+
       margin: auto;
 
-      background: #f8f3e7;
+      background: #f8f4ea;
 
-      border: 1px solid rgba(0,0,0,0.15);
+      border: 1px solid rgba(0,0,0,0.12);
 
       box-shadow:
         0 4px 12px rgba(0,0,0,0.08),
-        0 20px 40px rgba(0,0,0,0.08);
+        0 20px 50px rgba(0,0,0,0.08);
 
-      padding: 30px 24px 60px;
+      padding: 28px 24px 60px;
+
     }
 
     .masthead {
+
       text-align: center;
+
       border-bottom: 3px double #111;
-      padding-bottom: 20px;
-      margin-bottom: 30px;
+
+      padding-bottom: 24px;
+
+      margin-bottom: 40px;
+
     }
 
     .date {
+
       font-size: 0.8rem;
-      letter-spacing: 2px;
-      margin-bottom: 10px;
-      opacity: 0.7;
+
+      letter-spacing: 3px;
+
+      opacity: 0.65;
+
+      margin-bottom: 12px;
+
     }
 
     h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: 3rem;
+
       margin: 0;
+
+      font-family: 'Playfair Display', serif;
+
+      font-size: 3.2rem;
+
       line-height: 1;
+
     }
 
     .tagline {
-      margin-top: 14px;
-      font-size: 0.95rem;
-      opacity: 0.7;
+
+      margin-top: 16px;
+
       font-style: italic;
+
+      opacity: 0.65;
+
+      font-size: 0.95rem;
+
     }
 
     .section-title {
+
       margin-top: 40px;
+
       margin-bottom: 20px;
-      font-size: 1.1rem;
-      letter-spacing: 1px;
-      border-bottom: 1px solid rgba(0,0,0,0.2);
+
       padding-bottom: 10px;
+
+      border-bottom: 1px solid rgba(0,0,0,0.2);
+
+      font-size: 1.1rem;
+
+      letter-spacing: 1px;
+
     }
 
     .game-card {
@@ -82,75 +128,86 @@
 
       border: 1px solid rgba(0,0,0,0.08);
 
+      border-radius: 8px;
+
       padding: 16px;
 
       margin-bottom: 14px;
 
-      border-radius: 8px;
-
       transition: transform 0.15s ease;
+
     }
 
     .game-card:hover {
+
       transform: translateY(-2px);
+
     }
 
     .team-row {
 
       display: flex;
+
       justify-content: space-between;
+
       align-items: center;
 
       padding: 6px 0;
 
-      font-size: 1rem;
     }
 
     .team-name {
-      font-weight: 500;
+
+      font-size: 1rem;
+
+    }
+
+    .winner .team-name {
+
+      font-weight: bold;
+
     }
 
     .score {
-      font-size: 1.4rem;
-      font-weight: bold;
-    }
 
-    .winner {
+      font-size: 1.5rem;
+
       font-weight: bold;
+
     }
 
     .status {
 
-      margin-top: 10px;
+      margin-top: 12px;
 
-      font-size: 0.8rem;
-
-      opacity: 0.6;
+      padding-top: 10px;
 
       border-top: 1px dashed rgba(0,0,0,0.15);
 
-      padding-top: 10px;
-    }
+      opacity: 0.6;
 
-    .standings-table {
-      margin-top: 20px;
+      font-size: 0.8rem;
+
     }
 
     .division {
+
       margin-bottom: 30px;
+
     }
 
     .division-name {
 
-      font-weight: bold;
+      font-family: 'Playfair Display', serif;
 
-      margin-bottom: 10px;
+      font-size: 1.25rem;
 
-      text-transform: uppercase;
+      margin-bottom: 12px;
 
-      letter-spacing: 1px;
+      padding-bottom: 6px;
 
-      font-size: 0.9rem;
+      border-bottom: 2px solid rgba(0,0,0,0.15);
+
     }
 
     .standing-row {
@@ -159,11 +216,12 @@
 
       justify-content: space-between;
 
-      padding: 6px 0;
+      padding: 7px 0;
 
       border-bottom: 1px dotted rgba(0,0,0,0.1);
 
       font-size: 0.92rem;
+
     }
 
     .footer {
@@ -172,9 +230,18 @@
 
       text-align: center;
 
-      opacity: 0.5;
+      opacity: 0.45;
 
-      font-size: 0.8rem;
+      font-size: 0.82rem;
+
+    }
+
+    .error {
+
+      opacity: 0.6;
+
+      padding: 12px 0;
+
     }
 
     @media (max-width: 640px) {
@@ -188,19 +255,21 @@
       }
 
       h1 {
-        font-size: 2.1rem;
+        font-size: 2.2rem;
       }
 
       .score {
         font-size: 1.2rem;
       }
 
-      .team-row {
-        font-size: 0.92rem;
+      .team-name {
+        font-size: 0.9rem;
       }
+
     }
 
   </style>
+
 </head>
 
 <body>
@@ -209,7 +278,9 @@
 
     <div class="masthead">
 
-      <div class="date" id="date"></div>
+      <div class="date"
+           id="date">
+      </div>
 
       <h1>The Morning Box Scores</h1>
 
@@ -229,7 +300,7 @@
       STANDINGS
     </div>
 
-    <div id="standings" class="standings-table"></div>
+    <div id="standings"></div>
 
     <div class="footer">
       Printed digitally each morning with coffee.
@@ -237,209 +308,259 @@
 
   </div>
 
-<script>
+  <script>
 
-async function loadMLBData() {
+    async function loadMLBData() {
 
-  try {
+      try {
 
-    // YESTERDAY'S DATE
-    const yesterday = new Date();
+        // YESTERDAY
+        const yesterday = new Date();
 
-    yesterday.setDate(yesterday.getDate() - 1);
+        yesterday.setDate(
+          yesterday.getDate() - 1
+        );
 
-    const yyyy = yesterday.getFullYear();
+        // DISPLAY DATE
+        const formattedDate =
+          yesterday.toLocaleDateString(
+            'en-US',
+            {
+              weekday: 'long',
+              month: 'long',
+              day: 'numeric',
+              year: 'numeric'
+            }
+          );
 
-    const mm = String(
-      yesterday.getMonth() + 1
-    ).padStart(2, '0');
+        document.getElementById('date')
+          .innerText =
+          formattedDate.toUpperCase();
 
-    const dd = String(
-      yesterday.getDate()
-    ).padStart(2, '0');
+        // API DATE FORMAT
+        const yyyy =
+          yesterday.getFullYear();
 
-    // HEADER DATE
-    const formattedDate =
-      yesterday.toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric'
-      });
+        const mm =
+          String(
+            yesterday.getMonth() + 1
+          ).padStart(2, '0');
 
-    document.getElementById('date').innerText =
-      formattedDate.toUpperCase();
+        const dd =
+          String(
+            yesterday.getDate()
+          ).padStart(2, '0');
 
-    const date = `${yyyy}-${mm}-${dd}`;
+        const apiDate =
+          `${yyyy}-${mm}-${dd}`;
 
-    // API URLS
-    const scheduleURL =
-      `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}`;
+        // API URLS
+        const scoresURL =
+          `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${apiDate}`;
 
-    const standingsURL =
-      `https://statsapi.mlb.com/api/v1/standings?leagueId=103,104`;
+        const standingsURL =
+          `https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${yyyy}`;
 
-    // FETCH BOTH
-    const [scheduleRes, standingsRes] =
-      await Promise.all([
-        fetch(scheduleURL),
-        fetch(standingsURL)
-      ]);
+        // FETCH DATA
+        const [scoresResponse,
+               standingsResponse] =
+          await Promise.all([
+            fetch(scoresURL),
+            fetch(standingsURL)
+          ]);
 
-    const scheduleData =
-      await scheduleRes.json();
+        const scoresData =
+          await scoresResponse.json();
 
-    const standingsData =
-      await standingsRes.json();
+        const standingsData =
+          await standingsResponse.json();
 
-    const scoresDiv =
-      document.getElementById('scores');
+        const scoresContainer =
+          document.getElementById('scores');
 
-    const standingsDiv =
-      document.getElementById('standings');
+        const standingsContainer =
+          document.getElementById('standings');
 
-    // CLEAR EXISTING
-    scoresDiv.innerHTML = '';
-    standingsDiv.innerHTML = '';
+        // CLEAR EXISTING
+        scoresContainer.innerHTML = '';
+        standingsContainer.innerHTML = '';
 
-    // GAMES
-    if (
-      scheduleData.dates &&
-      scheduleData.dates.length > 0
-    ) {
+        // SCORES
+        if (
+          scoresData.dates &&
+          scoresData.dates.length > 0
+        ) {
 
-      const games =
-        scheduleData.dates[0].games;
+          const games =
+            scoresData.dates[0].games;
 
-      games.forEach(game => {
+          games.forEach(game => {
 
-        const away =
-          game.teams.away.team.name;
+            const awayTeam =
+              game.teams.away.team.name;
 
-        const home =
-          game.teams.home.team.name;
+            const homeTeam =
+              game.teams.home.team.name;
 
-        const awayScore =
-          game.teams.away.score ?? 0;
+            const awayScore =
+              game.teams.away.score ?? 0;
 
-        const homeScore =
-          game.teams.home.score ?? 0;
+            const homeScore =
+              game.teams.home.score ?? 0;
 
-        const status =
-          game.status.detailedState;
+            const status =
+              game.status.detailedState;
 
-        const awayWinner =
-          awayScore > homeScore
-            ? 'winner'
-            : '';
+            const awayWinner =
+              awayScore > homeScore
+                ? 'winner'
+                : '';
 
-        const homeWinner =
-          homeScore > awayScore
-            ? 'winner'
-            : '';
+            const homeWinner =
+              homeScore > awayScore
+                ? 'winner'
+                : '';
 
-        const card =
-          document.createElement('div');
+            const card =
+              document.createElement('div');
 
-        card.className = 'game-card';
+            card.className =
+              'game-card';
 
-        card.innerHTML = `
-          <div class="team-row ${awayWinner}">
-            <div class="team-name">${away}</div>
-            <div class="score">${awayScore}</div>
-          </div>
+            card.innerHTML = `
+              <div class="team-row ${awayWinner}">
+                <div class="team-name">
+                  ${awayTeam}
+                </div>
 
-          <div class="team-row ${homeWinner}">
-            <div class="team-name">${home}</div>
-            <div class="score">${homeScore}</div>
-          </div>
+                <div class="score">
+                  ${awayScore}
+                </div>
+              </div>
 
-          <div class="status">
-            ${status}
-          </div>
-        `;
+              <div class="team-row ${homeWinner}">
+                <div class="team-name">
+                  ${homeTeam}
+                </div>
 
-        scoresDiv.appendChild(card);
+                <div class="score">
+                  ${homeScore}
+                </div>
+              </div>
 
-      });
+              <div class="status">
+                ${status}
+              </div>
+            `;
 
-    } else {
+            scoresContainer.appendChild(card);
 
-      scoresDiv.innerHTML =
-        '<p>No games found.</p>';
+          });
+
+        } else {
+
+          scoresContainer.innerHTML =
+            `<div class="error">
+              No games found.
+            </div>`;
+
+        }
+
+        // STANDINGS
+        if (
+          standingsData.records &&
+          standingsData.records.length > 0
+        ) {
+
+          standingsData.records.forEach(
+            division => {
+
+            const divisionBlock =
+              document.createElement('div');
+
+            divisionBlock.className =
+              'division';
+
+            const divisionName =
+              division.division.name
+                .replace(
+                  'American League',
+                  'AL'
+                )
+                .replace(
+                  'National League',
+                  'NL'
+                );
+
+            divisionBlock.innerHTML = `
+              <div class="division-name">
+                ${divisionName}
+              </div>
+            `;
+
+            division.teamRecords.forEach(
+              team => {
+
+              const row =
+                document.createElement('div');
+
+              row.className =
+                'standing-row';
+
+              row.innerHTML = `
+                <span>
+                  ${team.team.name}
+                </span>
+
+                <span>
+                  ${team.wins}-${team.losses}
+                </span>
+              `;
+
+              divisionBlock.appendChild(row);
+
+            });
+
+            standingsContainer
+              .appendChild(
+                divisionBlock
+              );
+
+          });
+
+        } else {
+
+          standingsContainer.innerHTML =
+            `<div class="error">
+              Standings unavailable.
+            </div>`;
+
+        }
+
+      } catch (error) {
+
+        console.error(error);
+
+        document.getElementById('scores')
+          .innerHTML =
+          `<div class="error">
+            Unable to load scores.
+          </div>`;
+
+        document.getElementById('standings')
+          .innerHTML =
+          `<div class="error">
+            Unable to load standings.
+          </div>`;
+
+      }
 
     }
 
-    // STANDINGS
-    if (
-      standingsData.records &&
-      standingsData.records.length > 0
-    ) {
+    loadMLBData();
 
-      standingsData.records.forEach(division => {
-
-        const divisionDiv =
-          document.createElement('div');
-
-        divisionDiv.className =
-          'division';
-
-        const divisionName =
-          division.division.name
-            .replace('American League', 'AL')
-            .replace('National League', 'NL');
-
-        divisionDiv.innerHTML = `
-          <div class="division-name">
-            ${divisionName}
-          </div>
-        `;
-
-        division.teamRecords.forEach(team => {
-
-          const row =
-            document.createElement('div');
-
-          row.className =
-            'standing-row';
-
-          row.innerHTML = `
-            <span>${team.team.name}</span>
-            <span>${team.wins}-${team.losses}</span>
-          `;
-
-          divisionDiv.appendChild(row);
-
-        });
-
-        standingsDiv.appendChild(divisionDiv);
-
-      });
-
-    } else {
-
-      standingsDiv.innerHTML =
-        '<p>Standings unavailable.</p>';
-
-    }
-
-  } catch (error) {
-
-    console.error(error);
-
-    document.getElementById('scores').innerHTML =
-      '<p>Error loading scores.</p>';
-
-    document.getElementById('standings').innerHTML =
-      '<p>Error loading standings.</p>';
-
-  }
-
-}
-
-loadMLBData();
-
-</script>
+  </script>
 
 </body>
+
 </html>
