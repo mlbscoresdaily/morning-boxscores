@@ -241,137 +241,199 @@
 
 async function loadMLBData() {
 
-  const yesterday = new Date();
+  try {
 
-  yesterday.setDate(yesterday.getDate() - 1);
+    // YESTERDAY'S DATE
+    const yesterday = new Date();
 
-  const yyyy = yesterday.getFullYear();
+    yesterday.setDate(yesterday.getDate() - 1);
 
-  const mm = String(yesterday.getMonth() + 1).padStart(2, '0');
+    const yyyy = yesterday.getFullYear();
 
-  const dd = String(yesterday.getDate()).padStart(2, '0');
+    const mm = String(
+      yesterday.getMonth() + 1
+    ).padStart(2, '0');
 
-  const formattedDate =
-    yesterday.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    });
+    const dd = String(
+      yesterday.getDate()
+    ).padStart(2, '0');
 
-  document.getElementById('date').innerText =
-    formattedDate.toUpperCase();
+    // HEADER DATE
+    const formattedDate =
+      yesterday.toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      });
 
-  const date = `${yyyy}-${mm}-${dd}`;
+    document.getElementById('date').innerText =
+      formattedDate.toUpperCase();
 
-  const scheduleURL =
-    `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}`;
+    const date = `${yyyy}-${mm}-${dd}`;
 
-  const standingsURL =
-    `https://statsapi.mlb.com/api/v1/standings?leagueId=103,104`;
+    // API URLS
+    const scheduleURL =
+      `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}`;
 
-  const [scheduleRes, standingsRes] = await Promise.all([
-    fetch(scheduleURL),
-    fetch(standingsURL)
-  ]);
+    const standingsURL =
+      `https://statsapi.mlb.com/api/v1/standings?leagueId=103,104`;
 
-  const scheduleData = await scheduleRes.json();
+    // FETCH BOTH
+    const [scheduleRes, standingsRes] =
+      await Promise.all([
+        fetch(scheduleURL),
+        fetch(standingsURL)
+      ]);
 
-  const standingsData = await standingsRes.json();
+    const scheduleData =
+      await scheduleRes.json();
 
-  const scoresDiv = document.getElementById('scores');
+    const standingsData =
+      await standingsRes.json();
 
-  const standingsDiv = document.getElementById('standings');
+    const scoresDiv =
+      document.getElementById('scores');
 
-  const games = scheduleData.dates[0].games;
+    const standingsDiv =
+      document.getElementById('standings');
 
-  games.forEach(game => {
+    // CLEAR EXISTING
+    scoresDiv.innerHTML = '';
+    standingsDiv.innerHTML = '';
 
-    const away = game.teams.away.team.name;
+    // GAMES
+    if (
+      scheduleData.dates &&
+      scheduleData.dates.length > 0
+    ) {
 
-    const home = game.teams.home.team.name;
+      const games =
+        scheduleData.dates[0].games;
 
-    const awayScore = game.teams.away.score ?? 0;
+      games.forEach(game => {
 
-    const homeScore = game.teams.home.score ?? 0;
+        const away =
+          game.teams.away.team.name;
 
-    const status = game.status.detailedState;
+        const home =
+          game.teams.home.team.name;
 
-    const awayWinner =
-      awayScore > homeScore ? 'winner' : '';
+        const awayScore =
+          game.teams.away.score ?? 0;
 
-    const homeWinner =
-      homeScore > awayScore ? 'winner' : '';
+        const homeScore =
+          game.teams.home.score ?? 0;
 
-    const card = document.createElement('div');
+        const status =
+          game.status.detailedState;
 
-    card.className = 'game-card';
+        const awayWinner =
+          awayScore > homeScore
+            ? 'winner'
+            : '';
 
-    card.innerHTML = `
+        const homeWinner =
+          homeScore > awayScore
+            ? 'winner'
+            : '';
 
-      <div class="team-row ${awayWinner}">
-        <div class="team-name">${away}</div>
-        <div class="score">${awayScore}</div>
-      </div>
+        const card =
+          document.createElement('div');
 
-      <div class="team-row ${homeWinner}">
-        <div class="team-name">${home}</div>
-        <div class="score">${homeScore}</div>
-      </div>
+        card.className = 'game-card';
 
-      <div class="status">
-        ${status}
-      </div>
-    `;
+        card.innerHTML = `
+          <div class="team-row ${awayWinner}">
+            <div class="team-name">${away}</div>
+            <div class="score">${awayScore}</div>
+          </div>
 
-    scoresDiv.appendChild(card);
+          <div class="team-row ${homeWinner}">
+            <div class="team-name">${home}</div>
+            <div class="score">${homeScore}</div>
+          </div>
 
- standingsData.records.forEach(division => {
+          <div class="status">
+            ${status}
+          </div>
+        `;
 
-  const divisionDiv = document.createElement('div');
+        scoresDiv.appendChild(card);
 
-  divisionDiv.className = 'division';
+      });
 
-  const divisionName = division.division.name
-    .replace('American League', 'AL')
-    .replace('National League', 'NL');
+    } else {
 
-  let rows = '';
+      scoresDiv.innerHTML =
+        '<p>No games found.</p>';
 
-  division.teamRecords.forEach(team => {
+    }
 
-    rows += `
-      <div class="standing-row">
-        <span>${team.team.name}</span>
-        <span>${team.wins}-${team.losses}</span>
-      </div>
-    `;
+    // STANDINGS
+    if (
+      standingsData.records &&
+      standingsData.records.length > 0
+    ) {
 
-  });
+      standingsData.records.forEach(division => {
 
-  divisionDiv.innerHTML = `
-    <div class="division-name">
-      ${divisionName}
-    </div>
+        const divisionDiv =
+          document.createElement('div');
 
-    ${rows}
-  `;
+        divisionDiv.className =
+          'division';
 
-  standingsDiv.appendChild(divisionDiv);
+        const divisionName =
+          division.division.name
+            .replace('American League', 'AL')
+            .replace('National League', 'NL');
 
-});
+        divisionDiv.innerHTML = `
+          <div class="division-name">
+            ${divisionName}
+          </div>
+        `;
 
-  divisionDiv.innerHTML = `
-    <div class="division-name">
-      ${divisionName}
-    </div>
+        division.teamRecords.forEach(team => {
 
-    ${rows}
-  `;
+          const row =
+            document.createElement('div');
 
-  standingsDiv.appendChild(divisionDiv);
+          row.className =
+            'standing-row';
 
-});
+          row.innerHTML = `
+            <span>${team.team.name}</span>
+            <span>${team.wins}-${team.losses}</span>
+          `;
+
+          divisionDiv.appendChild(row);
+
+        });
+
+        standingsDiv.appendChild(divisionDiv);
+
+      });
+
+    } else {
+
+      standingsDiv.innerHTML =
+        '<p>Standings unavailable.</p>';
+
+    }
+
+  } catch (error) {
+
+    console.error(error);
+
+    document.getElementById('scores').innerHTML =
+      '<p>Error loading scores.</p>';
+
+    document.getElementById('standings').innerHTML =
+      '<p>Error loading standings.</p>';
+
+  }
 
 }
 
