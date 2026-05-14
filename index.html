@@ -85,66 +85,105 @@
   </div>
 
   <script>
-    async function loadScores() {
+    <script>
 
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
+async function loadScores() {
 
-      const yyyy = yesterday.getFullYear();
-      const mm = String(yesterday.getMonth() + 1).padStart(2, '0');
-      const dd = String(yesterday.getDate()).padStart(2, '0');
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
 
-      const date = `${yyyy}-${mm}-${dd}`;
+  const yyyy = yesterday.getFullYear();
+  const mm = String(yesterday.getMonth() + 1).padStart(2, '0');
+  const dd = String(yesterday.getDate()).padStart(2, '0');
 
-      const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}`;
+  const date = `${yyyy}-${mm}-${dd}`;
 
-      const response = await fetch(url);
-      const data = await response.json();
+  const scheduleURL =
+    `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}`;
 
-      const scoresDiv = document.getElementById('scores');
+  const standingsURL =
+    `https://statsapi.mlb.com/api/v1/standings?leagueId=103,104`;
 
-      if (!data.dates.length) {
-        scoresDiv.innerHTML = "<p>No games found.</p>";
-        return;
-      }
+  const [scheduleRes, standingsRes] = await Promise.all([
+    fetch(scheduleURL),
+    fetch(standingsURL)
+  ]);
 
-      const games = data.dates[0].games;
+  const scheduleData = await scheduleRes.json();
+  const standingsData = await standingsRes.json();
 
-      games.forEach(game => {
+  const scoresDiv = document.getElementById('scores');
 
-        const away = game.teams.away.team.name;
-        const home = game.teams.home.team.name;
+  scoresDiv.innerHTML = "";
 
-        const awayScore = game.teams.away.score ?? "-";
-        const homeScore = game.teams.home.score ?? "-";
+  const games = scheduleData.dates[0].games;
 
-        const status = game.status.detailedState;
+  games.forEach(game => {
 
-        const gameDiv = document.createElement('div');
-        gameDiv.className = 'game';
+    const away = game.teams.away.team.name;
+    const home = game.teams.home.team.name;
 
-        gameDiv.innerHTML = `
-          <div class="teams">
-            <span>${away}</span>
-            <span>${awayScore}</span>
-          </div>
+    const awayScore = game.teams.away.score ?? "-";
+    const homeScore = game.teams.home.score ?? "-";
 
-          <div class="teams">
-            <span>${home}</span>
-            <span>${homeScore}</span>
-          </div>
+    const gameDiv = document.createElement('div');
+    gameDiv.className = 'game';
 
-          <div class="details">
-            ${status}
-          </div>
-        `;
+    gameDiv.innerHTML = `
+      <div class="teams">
+        <span>${away}</span>
+        <span>${awayScore}</span>
+      </div>
 
-        scoresDiv.appendChild(gameDiv);
+      <div class="teams">
+        <span>${home}</span>
+        <span>${homeScore}</span>
+      </div>
+    `;
 
-      });
-    }
+    scoresDiv.appendChild(gameDiv);
 
-    loadScores();
+  });
+
+  const standingsTitle = document.createElement('h2');
+  standingsTitle.innerText = "Standings";
+  standingsTitle.style.marginTop = "40px";
+
+  scoresDiv.appendChild(standingsTitle);
+
+  standingsData.records.forEach(division => {
+
+    const div = document.createElement('div');
+
+    div.innerHTML = `
+      <h3>${division.division.name}</h3>
+    `;
+
+    division.teamRecords.forEach(team => {
+
+      const row = document.createElement('div');
+
+      row.style.display = "flex";
+      row.style.justifyContent = "space-between";
+
+      row.innerHTML = `
+        <span>${team.team.name}</span>
+        <span>${team.wins}-${team.losses}</span>
+      `;
+
+      div.appendChild(row);
+
+    });
+
+    scoresDiv.appendChild(div);
+
+  });
+
+}
+
+loadScores();
+
+</script>
   </script>
 
 </body>
