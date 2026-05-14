@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
 
-<meta charset="UTF-8" />
+<meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
 <title>The Morning Box Scores</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
 
 <style>
 
@@ -16,101 +16,42 @@ body {
   margin: 0;
   padding: 18px;
   background: #e9e1cf;
-  font-family: 'IBM Plex Mono', monospace;
-  color: #171717;
+  font-family: IBM Plex Mono;
 }
 
 .page {
-  max-width: 820px;
+  max-width: 850px;
   margin: auto;
   background: #f8f4ea;
-  padding: 28px 22px 60px;
-  border: 1px solid rgba(0,0,0,0.12);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.08), 0 22px 50px rgba(0,0,0,0.08);
-}
-
-.masthead {
-  text-align: center;
-  border-bottom: 3px double #111;
-  padding-bottom: 20px;
-  margin-bottom: 35px;
-}
-
-.date {
-  font-size: 0.8rem;
-  letter-spacing: 3px;
-  opacity: 0.6;
+  padding: 25px;
+  border: 1px solid #0002;
 }
 
 h1 {
-  margin: 0;
-  font-size: 3rem;
-  font-family: 'Playfair Display', serif;
+  font-family: Playfair Display;
+  text-align: center;
 }
 
-.tagline {
-  margin-top: 10px;
-  opacity: 0.6;
-  font-style: italic;
+.section {
+  margin-top: 30px;
 }
 
-.section-title {
-  margin-top: 35px;
-  margin-bottom: 15px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(0,0,0,0.15);
-}
-
-.game-card {
-  background: rgba(255,255,255,0.5);
-  border: 1px solid rgba(0,0,0,0.08);
-  border-radius: 8px;
-  padding: 14px;
-  margin-bottom: 12px;
-}
-
-.team-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 5px 0;
-}
-
-.score {
-  font-weight: bold;
-  font-size: 1.3rem;
-}
-
-.division {
-  margin-bottom: 22px;
-}
-
-.division-name {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.2rem;
-  margin-bottom: 8px;
-  border-bottom: 1px solid rgba(0,0,0,0.15);
+.card {
+  background: white;
+  padding: 12px;
+  margin-bottom: 10px;
+  border: 1px solid #0001;
 }
 
 .row {
   display: flex;
   justify-content: space-between;
-  padding: 5px 0;
-  border-bottom: 1px dotted rgba(0,0,0,0.1);
-  font-size: 0.9rem;
+  padding: 4px 0;
 }
 
-.leader-box {
-  background: rgba(255,255,255,0.5);
-  padding: 10px;
-  border-radius: 8px;
-  margin-bottom: 12px;
-}
-
-.footer {
-  margin-top: 40px;
-  text-align: center;
-  opacity: 0.4;
-  font-size: 0.8rem;
+.title {
+  font-weight: bold;
+  margin-bottom: 10px;
 }
 
 </style>
@@ -121,190 +62,126 @@ h1 {
 
 <div class="page">
 
-  <div class="masthead">
-    <div class="date" id="date"></div>
-    <h1>The Morning Box Scores</h1>
-    <div class="tagline">Yesterday’s baseball. Nothing else.</div>
-  </div>
+<h1>The Morning Box Scores</h1>
 
-  <div class="section-title">FINAL SCORES</div>
+<div class="section">
+  <div class="title">Scores</div>
   <div id="scores"></div>
+</div>
 
-  <div class="section-title">STANDINGS</div>
+<div class="section">
+  <div class="title">Standings</div>
   <div id="standings"></div>
+</div>
 
-  <div class="section-title">LEAGUE LEADERS</div>
+<div class="section">
+  <div class="title">Leaders</div>
   <div id="leaders"></div>
-
-  <div class="footer">Printed digitally each morning.</div>
+</div>
 
 </div>
 
 <script>
 
-async function load() {
+const API = "/.netlify/functions/mlb";
 
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
+async function load(type) {
+  const res = await fetch(`${API}?type=${type}`);
+  return res.json();
+}
 
-  const yyyy = yesterday.getFullYear();
-  const mm = String(yesterday.getMonth()+1).padStart(2,'0');
-  const dd = String(yesterday.getDate()).padStart(2,'0');
+async function init() {
 
-  const apiDate = `${yyyy}-${mm}-${dd}`;
-
-  document.getElementById('date').innerText =
-    yesterday.toDateString().toUpperCase();
-
-  const scoresURL =
-    `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${apiDate}`;
-
-  const standingsURL =
-    `https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${yyyy}`;
-
-  const scoresDiv = document.getElementById('scores');
-  const standingsDiv = document.getElementById('standings');
-  const leadersDiv = document.getElementById('leaders');
-
-  scoresDiv.innerHTML = '';
-  standingsDiv.innerHTML = '';
-  leadersDiv.innerHTML = '';
+  const scores = await load("scores");
+  const standings = await load("standings");
+  const leaders = await load("leaders");
 
   // ---------------- SCORES ----------------
-  try {
+  const s = document.getElementById("scores");
 
-    const res = await fetch(scoresURL);
-    const data = await res.json();
+  scores.dates?.[0]?.games?.forEach(g => {
 
-    data.dates?.[0]?.games?.forEach(g => {
+    const div = document.createElement("div");
+    div.className = "card";
 
-      const card = document.createElement('div');
-      card.className = 'game-card';
+    div.innerHTML = `
+      <div class="row">
+        <span>${g.teams.away.team.name}</span>
+        <span>${g.teams.away.score ?? 0}</span>
+      </div>
+      <div class="row">
+        <span>${g.teams.home.team.name}</span>
+        <span>${g.teams.home.score ?? 0}</span>
+      </div>
+    `;
 
-      card.innerHTML = `
-        <div class="team-row">
-          <div>${g.teams.away.team.name}</div>
-          <div class="score">${g.teams.away.score ?? 0}</div>
-        </div>
+    s.appendChild(div);
 
-        <div class="team-row">
-          <div>${g.teams.home.team.name}</div>
-          <div class="score">${g.teams.home.score ?? 0}</div>
-        </div>
-      `;
+  });
 
-      scoresDiv.appendChild(card);
+  // ---------------- STANDINGS ----------------
+  const st = document.getElementById("standings");
 
-    });
+  standings.records?.forEach(d => {
 
-  } catch {
-    scoresDiv.innerHTML = "<div>Scores unavailable</div>";
-  }
+    const div = document.createElement("div");
+    div.className = "card";
 
-  // ---------------- STANDINGS (SAFE VERSION) ----------------
-  try {
+    const name = (d.division?.name || "")
+      .replace("American League","AL")
+      .replace("National League","NL");
 
-    const res = await fetch(standingsURL);
-    const data = await res.json();
+    div.innerHTML = `<div class="title">${name}</div>`;
 
-    (data.records || []).forEach(div => {
+    d.teamRecords?.forEach(t => {
 
-      const block = document.createElement('div');
-      block.className = 'division';
-
-      const name =
-        (div.division?.name || "Division")
-          .replace("American League","AL")
-          .replace("National League","NL");
-
-      block.innerHTML = `<div class="division-name">${name}</div>`;
-
-      (div.teamRecords || []).forEach(t => {
-
-        const row = document.createElement('div');
-        row.className = 'row';
-
-        row.innerHTML = `
-          <span>${t.team?.name || "Team"}</span>
-          <span>${t.wins || 0}-${t.losses || 0}</span>
-        `;
-
-        block.appendChild(row);
-
-      });
-
-      standingsDiv.appendChild(block);
-
-    });
-
-    if (!data.records?.length) {
-      standingsDiv.innerHTML =
-        "<div>Standings not available right now.</div>";
-    }
-
-  } catch {
-    standingsDiv.innerHTML =
-      "<div>Standings unavailable.</div>";
-  }
-
-  // ---------------- LEADERS (STABLE FAKE DATA FALLBACK) ----------------
-  // MLB endpoint is unreliable client-side → so we guarantee output
-
-  const mockLeaders = [
-    {
-      title: "Home Runs",
-      data: [["Shohei Ohtani", 18], ["Aaron Judge", 16], ["Pete Alonso", 15]]
-    },
-    {
-      title: "Batting Avg",
-      data: [["Luis Arraez", ".356"], ["Freddie Freeman", ".331"], ["Yandy Díaz", ".322"]]
-    },
-    {
-      title: "RBIs",
-      data: [["Matt Olson", 52], ["Kyle Tucker", 49], ["Juan Soto", 47]]
-    },
-    {
-      title: "Stolen Bases",
-      data: [["Elly De La Cruz", 24], ["Trea Turner", 18], ["Ronald Acuña Jr.", 16]]
-    },
-    {
-      title: "ERA",
-      data: [["Tyler Glasnow", "1.92"], ["Zack Wheeler", "2.01"], ["Gerrit Cole", "2.10"]]
-    },
-    {
-      title: "Wins",
-      data: [["Zack Wheeler", 8], ["Logan Webb", 7], ["Kevin Gausman", 7]]
-    }
-  ];
-
-  mockLeaders.forEach(cat => {
-
-    const box = document.createElement('div');
-    box.className = 'leader-box';
-
-    box.innerHTML = `<strong>${cat.title}</strong>`;
-
-    cat.data.forEach(p => {
-
-      const row = document.createElement('div');
-      row.className = 'row';
+      const row = document.createElement("div");
+      row.className = "row";
 
       row.innerHTML = `
-        <span>${p[0]}</span>
-        <span>${p[1]}</span>
+        <span>${t.team.name}</span>
+        <span>${t.wins}-${t.losses}</span>
       `;
 
-      box.appendChild(row);
+      div.appendChild(row);
 
     });
 
-    leadersDiv.appendChild(box);
+    st.appendChild(div);
+
+  });
+
+  // ---------------- LEADERS ----------------
+  const l = document.getElementById("leaders");
+
+  leaders.leagueLeaderCategories?.forEach(c => {
+
+    const div = document.createElement("div");
+    div.className = "card";
+
+    div.innerHTML = `<div class="title">${c.displayName}</div>`;
+
+    c.leaders?.slice(0,5).forEach(p => {
+
+      const row = document.createElement("div");
+      row.className = "row";
+
+      row.innerHTML = `
+        <span>${p.person.fullName}</span>
+        <span>${p.value}</span>
+      `;
+
+      div.appendChild(row);
+
+    });
+
+    l.appendChild(div);
 
   });
 
 }
 
-load();
+init();
 
 </script>
 
