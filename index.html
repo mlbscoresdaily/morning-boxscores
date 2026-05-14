@@ -24,7 +24,6 @@ body {
   background: #f8f4ea;
   padding: 25px;
   border: 1px solid rgba(0,0,0,0.12);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
 }
 
 h1 {
@@ -39,6 +38,8 @@ h1 {
   font-weight: bold;
 }
 
+/* ---------------- SCORES ---------------- */
+
 .card {
   background: white;
   border: 1px solid #0001;
@@ -46,22 +47,61 @@ h1 {
   margin-top: 10px;
 }
 
-.row {
-  display: flex;
-  justify-content: space-between;
-  padding: 4px 0;
+/* ---------------- STANDINGS CLEAN ---------------- */
+
+.division-block {
+  margin-top: 15px;
+  border: 1px solid #0001;
+  background: white;
+  padding: 10px;
 }
 
 .division-title {
   font-weight: bold;
-  margin-top: 10px;
-  border-bottom: 1px dotted #0002;
+  font-size: 14px;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.stand-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.stand-row span:last-child {
+  text-align: right;
+  opacity: 0.8;
+}
+
+/* ---------------- LEADERS ---------------- */
+
+.leader-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.leader-card {
+  background: white;
+  border: 1px solid #0001;
+  padding: 10px;
+}
+
+.leader-title {
+  font-weight: bold;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 6px;
   padding-bottom: 4px;
 }
 
-.subtle {
-  font-size: 0.85rem;
-  opacity: 0.7;
+.row {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+  font-size: 13px;
 }
 
 </style>
@@ -81,7 +121,7 @@ h1 {
 <div id="standings"></div>
 
 <div class="section-title">LEAGUE LEADERS</div>
-<div id="leaders"></div>
+<div id="leaders" class="leader-grid"></div>
 
 </div>
 
@@ -94,7 +134,6 @@ async function load() {
   yesterday.setDate(now.getDate() - 1);
 
   const yyyy = now.getFullYear();
-
   const mm = String(yesterday.getMonth()+1).padStart(2,'0');
   const dd = String(yesterday.getDate()).padStart(2,'0');
 
@@ -106,12 +145,7 @@ async function load() {
   const standingsURL =
     `https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${yyyy}`;
 
-  const leadersURL =
-    `https://statsapi.mlb.com/api/v1/stats/leaders?season=${yyyy}&leaderCategories=homeRuns,battingAverage,rbi,stolenBases,wins,earnedRunAverage,whip`;
-
-  const scoresDiv = document.getElementById("scores");
-  const standingsDiv = document.getElementById("standings");
-  const leadersDiv = document.getElementById("leaders");
+  const leaders = document.getElementById("leaders");
 
   // ---------------- SCORES ----------------
   try {
@@ -137,15 +171,16 @@ async function load() {
         </div>
       `;
 
-      scoresDiv.appendChild(card);
+      document.getElementById("scores").appendChild(card);
 
     });
 
   } catch {
-    scoresDiv.innerHTML = "<div class='card'>Scores unavailable</div>";
+    document.getElementById("scores").innerHTML =
+      "<div class='card'>Scores unavailable</div>";
   }
 
-  // ---------------- STANDINGS (WITH GB + WILDCARD) ----------------
+  // ---------------- STANDINGS (CLEAN + DIVISIONS) ----------------
   try {
 
     const res = await fetch(standingsURL);
@@ -153,104 +188,102 @@ async function load() {
 
     const records = data.records || [];
 
-    // group divisions + wildcard separately
-    const grouped = {};
+    const container = document.getElementById("standings");
 
     records.forEach(div => {
 
-      const nameRaw = div.division?.name || div.league?.name || "Division";
-
-      let groupName = nameRaw;
-
-      if (div.standingsType?.includes("wildCard")) {
-        groupName = nameRaw.includes("American") ? "AL Wild Card" : "NL Wild Card";
-      }
-
-      if (!grouped[groupName]) grouped[groupName] = [];
-
-      grouped[groupName].push(div);
-
-    });
-
-    Object.keys(grouped).forEach(groupName => {
-
       const block = document.createElement("div");
-      block.className = "card";
+      block.className = "division-block";
 
-      block.innerHTML = `<div class="division-title">${groupName}</div>`;
+      const name =
+        div.division?.name ||
+        div.league?.name ||
+        "Division";
 
-      grouped[groupName].forEach(div => {
+      block.innerHTML = `<div class="division-title">${name}</div>`;
 
-        (div.teamRecords || []).forEach(t => {
+      (div.teamRecords || []).forEach(t => {
 
-          const row = document.createElement("div");
-          row.className = "row";
+        const row = document.createElement("div");
+        row.className = "stand-row";
 
-          const gb =
-            t.divisionGamesBack ??
-            t.wildCardGamesBack ??
-            "-";
+        row.innerHTML = `
+          <span>${t.team.name}</span>
+          <span>${t.wins}-${t.losses} (${t.divisionGamesBack ?? "-"} GB)</span>
+        `;
 
-          row.innerHTML = `
-            <span>${t.team.name}</span>
-            <span>${t.wins}-${t.losses} (${gb} GB)</span>
-          `;
-
-          block.appendChild(row);
-
-        });
+        block.appendChild(row);
 
       });
 
-      standingsDiv.appendChild(block);
+      container.appendChild(block);
 
     });
 
   } catch {
-    standingsDiv.innerHTML = "<div class='card'>Standings unavailable</div>";
+    document.getElementById("standings").innerHTML =
+      "<div class='card'>Standings unavailable</div>";
   }
 
-  // ---------------- LEAGUE LEADERS (SAFE REAL VERSION) ----------------
-  try {
+  // ---------------- LEAGUE LEADERS (FIXED APPROACH) ----------------
+  // MLB "leaders" endpoint is unreliable → use stable stats endpoints instead
 
-    const res = await fetch(leadersURL);
-    const data = await res.json();
+  const leaderEndpoints = [
+    { title: "Batting Average", url: `https://statsapi.mlb.com/api/v1/stats?stats=season&group=hitting&sortStat=avg&limit=5&season=${yyyy}` },
+    { title: "Home Runs", url: `https://statsapi.mlb.com/api/v1/stats?stats=season&group=hitting&sortStat=homeRuns&limit=5&season=${yyyy}` },
+    { title: "RBI", url: `https://statsapi.mlb.com/api/v1/stats?stats=season&group=hitting&sortStat=rbi&limit=5&season=${yyyy}` },
+    { title: "Stolen Bases", url: `https://statsapi.mlb.com/api/v1/stats?stats=season&group=hitting&sortStat=stolenBases&limit=5&season=${yyyy}` },
+    { title: "Wins", url: `https://statsapi.mlb.com/api/v1/stats?stats=season&group=pitching&sortStat=wins&limit=5&season=${yyyy}` },
+    { title: "ERA", url: `https://statsapi.mlb.com/api/v1/stats?stats=season&group=pitching&sortStat=era&limit=5&season=${yyyy}` },
+    { title: "WHIP", url: `https://statsapi.mlb.com/api/v1/stats?stats=season&group=pitching&sortStat=whip&limit=5&season=${yyyy}` }
+  ];
 
-    const cats = data.leagueLeaderCategories || [];
+  for (const cat of leaderEndpoints) {
 
-    if (!cats.length) {
-      leadersDiv.innerHTML =
-        "<div class='card'>Leaders temporarily unavailable</div>";
-      return;
-    }
+    try {
 
-    cats.forEach(cat => {
+      const res = await fetch(cat.url);
+      const data = await res.json();
+
+      const stats = data.stats?.[0]?.splits || [];
 
       const box = document.createElement("div");
-      box.className = "card";
+      box.className = "leader-card";
 
-      box.innerHTML = `<div class="division-title">${cat.displayName}</div>`;
+      const title = document.createElement("div");
+      title.className = "leader-title";
+      title.innerText = cat.title;
 
-      (cat.leaders || []).slice(0,5).forEach(p => {
+      box.appendChild(title);
+
+      stats.forEach(p => {
 
         const row = document.createElement("div");
         row.className = "row";
 
+        const name = p.player?.fullName || "Player";
+        const value = p.stat?.value ?? p.stat?.avg ?? "-";
+
         row.innerHTML = `
-          <span>${p.person.fullName}</span>
-          <span>${p.value}</span>
+          <span>${name}</span>
+          <span>${value}</span>
         `;
 
         box.appendChild(row);
 
       });
 
-      leadersDiv.appendChild(box);
+      leaders.appendChild(box);
 
-    });
+    } catch {
 
-  } catch {
-    leadersDiv.innerHTML = "<div class='card'>Leaders unavailable</div>";
+      const fallback = document.createElement("div");
+      fallback.className = "leader-card";
+      fallback.innerHTML = `<div class="leader-title">${cat.title}</div><div class="row">Unavailable</div>`;
+      leaders.appendChild(fallback);
+
+    }
+
   }
 
 }
