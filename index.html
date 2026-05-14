@@ -14,12 +14,12 @@ body {
   margin: 0;
   padding: 18px;
   background: #e9e1cf;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: IBM Plex Mono;
   color: #111;
 }
 
 .page {
-  max-width: 850px;
+  max-width: 900px;
   margin: auto;
   background: #f8f4ea;
   padding: 25px;
@@ -29,20 +29,13 @@ body {
 
 h1 {
   text-align: center;
-  font-family: 'Playfair Display', serif;
-  margin-bottom: 10px;
-}
-
-.date {
-  text-align: center;
-  opacity: 0.6;
-  margin-bottom: 20px;
+  font-family: Playfair Display;
 }
 
 .section-title {
   margin-top: 30px;
   border-bottom: 1px solid #0002;
-  padding-bottom: 6px;
+  padding-bottom: 5px;
   font-weight: bold;
 }
 
@@ -61,9 +54,14 @@ h1 {
 
 .division-title {
   font-weight: bold;
-  margin-top: 15px;
+  margin-top: 10px;
   border-bottom: 1px dotted #0002;
   padding-bottom: 4px;
+}
+
+.subtle {
+  font-size: 0.85rem;
+  opacity: 0.7;
 }
 
 </style>
@@ -75,7 +73,6 @@ h1 {
 <div class="page">
 
 <h1>The Morning Box Scores</h1>
-<div class="date" id="date"></div>
 
 <div class="section-title">SCORES</div>
 <div id="scores"></div>
@@ -97,13 +94,11 @@ async function load() {
   yesterday.setDate(now.getDate() - 1);
 
   const yyyy = now.getFullYear();
+
   const mm = String(yesterday.getMonth()+1).padStart(2,'0');
   const dd = String(yesterday.getDate()).padStart(2,'0');
 
   const dateStr = `${yyyy}-${mm}-${dd}`;
-
-  document.getElementById("date").innerText =
-    yesterday.toDateString();
 
   const scoresURL =
     `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}`;
@@ -125,10 +120,6 @@ async function load() {
     const data = await res.json();
 
     const games = data.dates?.[0]?.games || [];
-
-    if (!games.length) {
-      scoresDiv.innerHTML = "<div class='card'>No games found.</div>";
-    }
 
     games.forEach(g => {
 
@@ -154,7 +145,7 @@ async function load() {
     scoresDiv.innerHTML = "<div class='card'>Scores unavailable</div>";
   }
 
-  // ---------------- STANDINGS ----------------
+  // ---------------- STANDINGS (WITH GB + WILDCARD) ----------------
   try {
 
     const res = await fetch(standingsURL);
@@ -162,34 +153,52 @@ async function load() {
 
     const records = data.records || [];
 
-    if (!records.length) {
-      standingsDiv.innerHTML = "<div class='card'>Standings unavailable</div>";
-    }
+    // group divisions + wildcard separately
+    const grouped = {};
 
     records.forEach(div => {
+
+      const nameRaw = div.division?.name || div.league?.name || "Division";
+
+      let groupName = nameRaw;
+
+      if (div.standingsType?.includes("wildCard")) {
+        groupName = nameRaw.includes("American") ? "AL Wild Card" : "NL Wild Card";
+      }
+
+      if (!grouped[groupName]) grouped[groupName] = [];
+
+      grouped[groupName].push(div);
+
+    });
+
+    Object.keys(grouped).forEach(groupName => {
 
       const block = document.createElement("div");
       block.className = "card";
 
-      const name =
-        (div.division?.name || "Division")
-          .replace("American League","AL")
-          .replace("National League","NL");
+      block.innerHTML = `<div class="division-title">${groupName}</div>`;
 
-      block.innerHTML =
-        `<div class="division-title">${name}</div>`;
+      grouped[groupName].forEach(div => {
 
-      (div.teamRecords || []).forEach(t => {
+        (div.teamRecords || []).forEach(t => {
 
-        const row = document.createElement("div");
-        row.className = "row";
+          const row = document.createElement("div");
+          row.className = "row";
 
-        row.innerHTML = `
-          <span>${t.team.name}</span>
-          <span>${t.wins}-${t.losses}</span>
-        `;
+          const gb =
+            t.divisionGamesBack ??
+            t.wildCardGamesBack ??
+            "-";
 
-        block.appendChild(row);
+          row.innerHTML = `
+            <span>${t.team.name}</span>
+            <span>${t.wins}-${t.losses} (${gb} GB)</span>
+          `;
+
+          block.appendChild(row);
+
+        });
 
       });
 
@@ -201,7 +210,7 @@ async function load() {
     standingsDiv.innerHTML = "<div class='card'>Standings unavailable</div>";
   }
 
-  // ---------------- LEAGUE LEADERS ----------------
+  // ---------------- LEAGUE LEADERS (SAFE REAL VERSION) ----------------
   try {
 
     const res = await fetch(leadersURL);
@@ -211,7 +220,8 @@ async function load() {
 
     if (!cats.length) {
       leadersDiv.innerHTML =
-        "<div class='card'>Leaders unavailable</div>";
+        "<div class='card'>Leaders temporarily unavailable</div>";
+      return;
     }
 
     cats.forEach(cat => {
@@ -219,8 +229,7 @@ async function load() {
       const box = document.createElement("div");
       box.className = "card";
 
-      box.innerHTML =
-        `<div class="division-title">${cat.displayName}</div>`;
+      box.innerHTML = `<div class="division-title">${cat.displayName}</div>`;
 
       (cat.leaders || []).slice(0,5).forEach(p => {
 
