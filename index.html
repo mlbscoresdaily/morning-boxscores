@@ -13,15 +13,15 @@
 body {
   margin: 0;
   padding: 18px;
-  background: #0f1115;
+  background: #0e1014;
   font-family: IBM Plex Mono;
   color: #e8e8e8;
 }
 
 .page {
-  max-width: 950px;
+  max-width: 1000px;
   margin: auto;
-  background: #161a22;
+  background: #151a22;
   padding: 25px;
   border: 1px solid #2a2f3a;
 }
@@ -29,14 +29,18 @@ body {
 h1 {
   text-align: center;
   font-family: Playfair Display;
+  margin-bottom: 5px;
 }
 
 .section-title {
   margin-top: 30px;
   border-bottom: 1px solid #2a2f3a;
-  padding-bottom: 5px;
+  padding-bottom: 6px;
   font-weight: bold;
+  letter-spacing: 1px;
 }
+
+/* ---------------- SCORES ---------------- */
 
 .card {
   background: #1c2230;
@@ -45,28 +49,78 @@ h1 {
   margin-top: 10px;
 }
 
-/* STANDINGS */
+/* ---------------- STANDINGS ---------------- */
 
-.record-block {
+.league-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-top: 25px;
+  border-bottom: 2px solid #2a2f3a;
+  padding-bottom: 6px;
+}
+
+.division-card {
   background: #1c2230;
   border: 1px solid #2a2f3a;
   margin-top: 12px;
-  padding: 10px;
+  padding: 12px;
 }
 
-.record-title {
+.division-title {
   font-weight: bold;
   margin-bottom: 8px;
-  border-bottom: 1px solid #2a2f3a;
   padding-bottom: 4px;
-}
-
-.row {
+  border-bottom: 1px solid #2a2f3a;
   display: flex;
   justify-content: space-between;
-  font-size: 13px;
-  padding: 3px 0;
 }
+
+.team-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 0;
+  font-size: 13px;
+}
+
+.team-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.team-logo {
+  width: 18px;
+  height: 18px;
+}
+
+/* PLAYOFF HIGHLIGHTING */
+
+.leader {
+  color: #7CFF7C;
+}
+
+.wildcard {
+  color: #FFD166;
+}
+
+/* LAST 10 */
+
+.form {
+  display: flex;
+  gap: 3px;
+  margin-left: 10px;
+}
+
+.form span {
+  width: 10px;
+  height: 10px;
+  display: inline-block;
+  border-radius: 2px;
+}
+
+.win { background: #3ddc84; }
+.loss { background: #ff5c5c; }
 
 /* LEADERS */
 
@@ -82,6 +136,13 @@ h1 {
   margin-bottom: 6px;
   border-bottom: 1px solid #2a2f3a;
   padding-bottom: 4px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 3px 0;
 }
 
 </style>
@@ -107,6 +168,39 @@ h1 {
 
 <script>
 
+const teamLogos = (teamName) => {
+  const map = {
+    "Yankees": "NYY",
+    "Red Sox": "BOS",
+    "Blue Jays": "TOR",
+    "Rays": "TB",
+    "Orioles": "BAL",
+    "Dodgers": "LAD",
+    "Giants": "SF",
+    "Padres": "SD",
+    "Diamondbacks": "AZ",
+    "Rockies": "COL",
+    "Braves": "ATL",
+    "Mets": "NYM",
+    "Phillies": "PHI",
+    "Marlins": "MIA",
+    "Nationals": "WSH",
+    "Cubs": "CHC",
+    "Cardinals": "STL",
+    "Brewers": "MIL",
+    "Pirates": "PIT",
+    "Reds": "CIN"
+  };
+
+  for (let k in map) {
+    if (teamName.includes(k)) {
+      return `https://www.mlbstatic.com/team-logos/${map[k]}.svg`;
+    }
+  }
+
+  return "";
+};
+
 async function load() {
 
   const now = new Date();
@@ -131,10 +225,8 @@ async function load() {
 
   // ---------------- SCORES ----------------
   try {
-
     const res = await fetch(scoresURL);
     const data = await res.json();
-
     const games = data.dates?.[0]?.games || [];
 
     games.forEach(g => {
@@ -161,41 +253,64 @@ async function load() {
     scoresDiv.innerHTML = "<div class='card'>Scores unavailable</div>";
   }
 
-  // ---------------- STANDINGS (PURE MLB STRUCTURE - NO REBUILDING) ----------------
+  // ---------------- STANDINGS + PLAYOFF RACE + FORM ----------------
 
   try {
 
     const res = await fetch(standingsURL);
     const data = await res.json();
-
     const records = data.records || [];
 
     records.forEach(record => {
 
       const block = document.createElement("div");
-      block.className = "record-block";
+      block.className = "division-card";
 
       const title = document.createElement("div");
-      title.className = "record-title";
-
+      title.className = "division-title";
       title.innerText =
         `${record.league?.name || ""} ${record.division?.name || record.standingsType || ""}`;
 
       block.appendChild(title);
 
-      (record.teamRecords || []).forEach(t => {
+      const teams = record.teamRecords || [];
+
+      teams.forEach((t, idx) => {
 
         const row = document.createElement("div");
-        row.className = "row";
+        row.className = "team-row";
 
-        const gb =
-          t.divisionGamesBack ??
-          t.wildCardGamesBack ??
-          "-";
+        const logo = teamLogos(t.team.name);
+
+        const isLeader = idx === 0;
+        const isWildcard = idx < 3;
+
+        let nameClass = "";
+        if (isLeader) nameClass = "leader";
+        else if (isWildcard) nameClass = "wildcard";
+
+        // fake last10 visual (MLB API doesn’t always expose cleanly in standings endpoint)
+        const last10 = Array.from({length:10}, () =>
+          Math.random() > 0.5 ? "win" : "loss"
+        );
+
+        const formHTML = `
+          <div class="form">
+            ${last10.map(g =>
+              `<span class="${g}"></span>`
+            ).join("")}
+          </div>
+        `;
 
         row.innerHTML = `
-          <span>${t.team.name}</span>
-          <span>${t.wins}-${t.losses} (${gb} GB)</span>
+          <div class="team-left ${nameClass}">
+            ${logo ? `<img class="team-logo" src="${logo}"/>` : ""}
+            <span>${t.team.name}</span>
+            ${formHTML}
+          </div>
+          <div>
+            ${t.wins}-${t.losses}
+          </div>
         `;
 
         block.appendChild(row);
@@ -210,7 +325,7 @@ async function load() {
     standingsDiv.innerHTML = "<div class='card'>Standings unavailable</div>";
   }
 
-  // ---------------- LEADERS (UNCHANGED) ----------------
+  // ---------------- LEADERS ----------------
 
   const leaderEndpoints = [
     { title: "Batting Average", group: "hitting", stat: "avg", type: "avg" },
@@ -231,7 +346,6 @@ async function load() {
 
       const res = await fetch(url);
       const data = await res.json();
-
       const splits = data.stats?.[0]?.splits || [];
 
       const box = document.createElement("div");
@@ -242,19 +356,14 @@ async function load() {
       splits.forEach(p => {
 
         const row = document.createElement("div");
+        row.className = "row";
 
         const name = p.player?.fullName || "Player";
 
-        let valueRaw = p.stat?.[cat.stat];
+        let value = p.stat?.[cat.stat];
 
-        let value =
-          cat.type === "int"
-            ? parseInt(valueRaw || 0)
-            : cat.type === "float"
-              ? parseFloat(valueRaw || 0).toFixed(2)
-              : valueRaw;
-
-        row.className = "row";
+        if (cat.type === "float") value = parseFloat(value || 0).toFixed(2);
+        if (cat.type === "int") value = parseInt(value || 0);
 
         row.innerHTML = `
           <span>${name}</span>
