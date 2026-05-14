@@ -1,151 +1,99 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script>
 
-  <title>The Morning Box Scores</title>
+async function loadScores() {
 
-  <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      font-family: Georgia, serif;
-      background: #f4f1ea;
-      color: #111;
-      max-width: 700px;
-      margin: auto;
-      line-height: 1.5;
-    }
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
 
-    h1 {
-      text-align: center;
-      border-bottom: 2px solid black;
-      padding-bottom: 10px;
-      margin-bottom: 30px;
-      font-size: 2rem;
-    }
+  const yyyy = yesterday.getFullYear();
+  const mm = String(yesterday.getMonth() + 1).padStart(2, '0');
+  const dd = String(yesterday.getDate()).padStart(2, '0');
 
-    .subtitle {
-      text-align: center;
-      margin-bottom: 40px;
-      font-style: italic;
-      color: #555;
-    }
+  const date = `${yyyy}-${mm}-${dd}`;
 
-    .game {
-      border-bottom: 1px solid #999;
-      padding: 15px 0;
-    }
+  const scheduleURL =
+    `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}`;
 
-    .teams {
-      display: flex;
-      justify-content: space-between;
-      font-size: 1.1rem;
-      font-weight: bold;
-    }
+  const standingsURL =
+    `https://statsapi.mlb.com/api/v1/standings?leagueId=103,104`;
 
-    .details {
-      margin-top: 8px;
-      color: #444;
-      font-size: 0.95rem;
-    }
+  const [scheduleRes, standingsRes] = await Promise.all([
+    fetch(scheduleURL),
+    fetch(standingsURL)
+  ]);
 
-    .footer {
-      margin-top: 50px;
-      text-align: center;
-      font-size: 0.85rem;
-      color: #666;
-    }
+  const scheduleData = await scheduleRes.json();
+  const standingsData = await standingsRes.json();
 
-    @media (max-width: 600px) {
-      body {
-        padding: 15px;
-      }
+  const scoresDiv = document.getElementById('scores');
 
-      .teams {
-        font-size: 1rem;
-      }
-    }
-  </style>
-</head>
+  scoresDiv.innerHTML = "";
 
-<body>
+  const games = scheduleData.dates[0].games;
 
-  <h1>The Morning Box Scores</h1>
+  games.forEach(game => {
 
-  <div class="subtitle">
-    Yesterday’s baseball. Nothing else.
-  </div>
+    const away = game.teams.away.team.name;
+    const home = game.teams.home.team.name;
 
-  <div id="scores"></div>
+    const awayScore = game.teams.away.score ?? "-";
+    const homeScore = game.teams.home.score ?? "-";
 
-  <div class="footer">
-    Printed digitally each morning.
-  </div>
+    const gameDiv = document.createElement('div');
+    gameDiv.className = 'game';
 
-  <script>
-    async function loadScores() {
+    gameDiv.innerHTML = `
+      <div class="teams">
+        <span>${away}</span>
+        <span>${awayScore}</span>
+      </div>
 
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
+      <div class="teams">
+        <span>${home}</span>
+        <span>${homeScore}</span>
+      </div>
+    `;
 
-      const yyyy = yesterday.getFullYear();
-      const mm = String(yesterday.getMonth() + 1).padStart(2, '0');
-      const dd = String(yesterday.getDate()).padStart(2, '0');
+    scoresDiv.appendChild(gameDiv);
 
-      const date = `${yyyy}-${mm}-${dd}`;
+  });
 
-      const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}`;
+  const standingsTitle = document.createElement('h2');
+  standingsTitle.innerText = "Standings";
+  standingsTitle.style.marginTop = "40px";
 
-      const response = await fetch(url);
-      const data = await response.json();
+  scoresDiv.appendChild(standingsTitle);
 
-      const scoresDiv = document.getElementById('scores');
+  standingsData.records.forEach(division => {
 
-      if (!data.dates.length) {
-        scoresDiv.innerHTML = "<p>No games found.</p>";
-        return;
-      }
+    const div = document.createElement('div');
 
-      const games = data.dates[0].games;
+    div.innerHTML = `
+      <h3>${division.division.name}</h3>
+    `;
 
-      games.forEach(game => {
+    division.teamRecords.forEach(team => {
 
-        const away = game.teams.away.team.name;
-        const home = game.teams.home.team.name;
+      const row = document.createElement('div');
 
-        const awayScore = game.teams.away.score ?? "-";
-        const homeScore = game.teams.home.score ?? "-";
+      row.style.display = "flex";
+      row.style.justifyContent = "space-between";
 
-        const status = game.status.detailedState;
+      row.innerHTML = `
+        <span>${team.team.name}</span>
+        <span>${team.wins}-${team.losses}</span>
+      `;
 
-        const gameDiv = document.createElement('div');
-        gameDiv.className = 'game';
+      div.appendChild(row);
 
-        gameDiv.innerHTML = `
-          <div class="teams">
-            <span>${away}</span>
-            <span>${awayScore}</span>
-          </div>
+    });
 
-          <div class="teams">
-            <span>${home}</span>
-            <span>${homeScore}</span>
-          </div>
+    scoresDiv.appendChild(div);
 
-          <div class="details">
-            ${status}
-          </div>
-        `;
+  });
 
-        scoresDiv.appendChild(gameDiv);
+}
 
-      });
-    }
+loadScores();
 
-    loadScores();
-  </script>
-
-</body>
-</html>
+</script>
