@@ -326,17 +326,13 @@ async function loadMLBData() {
 
     scoresDiv.appendChild(card);
 
-  });
-
-standingsData.records.forEach(division => {
+ standingsData.records.forEach(division => {
 
   const divisionDiv = document.createElement('div');
 
   divisionDiv.className = 'division';
 
-  let divisionName = division.division.name;
-
-  divisionName = divisionName
+  const divisionName = division.division.name
     .replace('American League', 'AL')
     .replace('National League', 'NL');
 
@@ -352,6 +348,18 @@ standingsData.records.forEach(division => {
     `;
 
   });
+
+  divisionDiv.innerHTML = `
+    <div class="division-name">
+      ${divisionName}
+    </div>
+
+    ${rows}
+  `;
+
+  standingsDiv.appendChild(divisionDiv);
+
+});
 
   divisionDiv.innerHTML = `
     <div class="division-name">
