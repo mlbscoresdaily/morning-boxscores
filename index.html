@@ -1,68 +1,252 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Morning Box Scores</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>The Morning Box Scores</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
 
 <style>
+
 body {
-  font-family: Arial;
-  background: #eee;
   margin: 0;
-  padding: 20px;
+  padding: 18px;
+  background: #e9e1cf;
+  font-family: 'IBM Plex Mono', monospace;
+  color: #111;
 }
-.container {
-  max-width: 800px;
+
+.page {
+  max-width: 850px;
   margin: auto;
-  background: white;
-  padding: 20px;
+  background: #f8f4ea;
+  padding: 25px;
+  border: 1px solid rgba(0,0,0,0.12);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
 }
+
+h1 {
+  text-align: center;
+  font-family: 'Playfair Display', serif;
+  margin-bottom: 10px;
+}
+
+.date {
+  text-align: center;
+  opacity: 0.6;
+  margin-bottom: 20px;
+}
+
+.section-title {
+  margin-top: 30px;
+  border-bottom: 1px solid #0002;
+  padding-bottom: 6px;
+  font-weight: bold;
+}
+
 .card {
-  border: 1px solid #ddd;
-  margin: 10px 0;
+  background: white;
+  border: 1px solid #0001;
   padding: 10px;
+  margin-top: 10px;
 }
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.division-title {
+  font-weight: bold;
+  margin-top: 15px;
+  border-bottom: 1px dotted #0002;
+  padding-bottom: 4px;
+}
+
 </style>
 
 </head>
 
 <body>
 
-<div class="container">
+<div class="page">
 
 <h1>The Morning Box Scores</h1>
+<div class="date" id="date"></div>
 
-<h2>Scores</h2>
-<div id="scores">Loading...</div>
+<div class="section-title">SCORES</div>
+<div id="scores"></div>
 
-<h2>Standings</h2>
-<div id="standings">Loading...</div>
+<div class="section-title">STANDINGS</div>
+<div id="standings"></div>
 
-<h2>Leaders</h2>
-<div id="leaders">Loading...</div>
+<div class="section-title">LEAGUE LEADERS</div>
+<div id="leaders"></div>
 
 </div>
 
 <script>
 
-console.log("SCRIPT LOADED OK");
+async function load() {
 
-async function test() {
+  const now = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(now.getDate() - 1);
 
-  document.getElementById("scores").innerHTML =
-    "<div class='card'>JS is working ✅</div>";
+  const yyyy = now.getFullYear();
+  const mm = String(yesterday.getMonth()+1).padStart(2,'0');
+  const dd = String(yesterday.getDate()).padStart(2,'0');
 
-  document.getElementById("standings").innerHTML =
-    "<div class='card'>Standings placeholder</div>";
+  const dateStr = `${yyyy}-${mm}-${dd}`;
 
-  document.getElementById("leaders").innerHTML =
-    "<div class='card'>Leaders placeholder</div>";
+  document.getElementById("date").innerText =
+    yesterday.toDateString();
+
+  const scoresURL =
+    `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dateStr}`;
+
+  const standingsURL =
+    `https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${yyyy}`;
+
+  const leadersURL =
+    `https://statsapi.mlb.com/api/v1/stats/leaders?season=${yyyy}&leaderCategories=homeRuns,battingAverage,rbi,stolenBases,wins,earnedRunAverage,whip`;
+
+  const scoresDiv = document.getElementById("scores");
+  const standingsDiv = document.getElementById("standings");
+  const leadersDiv = document.getElementById("leaders");
+
+  // ---------------- SCORES ----------------
+  try {
+
+    const res = await fetch(scoresURL);
+    const data = await res.json();
+
+    const games = data.dates?.[0]?.games || [];
+
+    if (!games.length) {
+      scoresDiv.innerHTML = "<div class='card'>No games found.</div>";
+    }
+
+    games.forEach(g => {
+
+      const card = document.createElement("div");
+      card.className = "card";
+
+      card.innerHTML = `
+        <div class="row">
+          <span>${g.teams.away.team.name}</span>
+          <span>${g.teams.away.score ?? 0}</span>
+        </div>
+        <div class="row">
+          <span>${g.teams.home.team.name}</span>
+          <span>${g.teams.home.score ?? 0}</span>
+        </div>
+      `;
+
+      scoresDiv.appendChild(card);
+
+    });
+
+  } catch {
+    scoresDiv.innerHTML = "<div class='card'>Scores unavailable</div>";
+  }
+
+  // ---------------- STANDINGS ----------------
+  try {
+
+    const res = await fetch(standingsURL);
+    const data = await res.json();
+
+    const records = data.records || [];
+
+    if (!records.length) {
+      standingsDiv.innerHTML = "<div class='card'>Standings unavailable</div>";
+    }
+
+    records.forEach(div => {
+
+      const block = document.createElement("div");
+      block.className = "card";
+
+      const name =
+        (div.division?.name || "Division")
+          .replace("American League","AL")
+          .replace("National League","NL");
+
+      block.innerHTML =
+        `<div class="division-title">${name}</div>`;
+
+      (div.teamRecords || []).forEach(t => {
+
+        const row = document.createElement("div");
+        row.className = "row";
+
+        row.innerHTML = `
+          <span>${t.team.name}</span>
+          <span>${t.wins}-${t.losses}</span>
+        `;
+
+        block.appendChild(row);
+
+      });
+
+      standingsDiv.appendChild(block);
+
+    });
+
+  } catch {
+    standingsDiv.innerHTML = "<div class='card'>Standings unavailable</div>";
+  }
+
+  // ---------------- LEAGUE LEADERS ----------------
+  try {
+
+    const res = await fetch(leadersURL);
+    const data = await res.json();
+
+    const cats = data.leagueLeaderCategories || [];
+
+    if (!cats.length) {
+      leadersDiv.innerHTML =
+        "<div class='card'>Leaders unavailable</div>";
+    }
+
+    cats.forEach(cat => {
+
+      const box = document.createElement("div");
+      box.className = "card";
+
+      box.innerHTML =
+        `<div class="division-title">${cat.displayName}</div>`;
+
+      (cat.leaders || []).slice(0,5).forEach(p => {
+
+        const row = document.createElement("div");
+        row.className = "row";
+
+        row.innerHTML = `
+          <span>${p.person.fullName}</span>
+          <span>${p.value}</span>
+        `;
+
+        box.appendChild(row);
+
+      });
+
+      leadersDiv.appendChild(box);
+
+    });
+
+  } catch {
+    leadersDiv.innerHTML = "<div class='card'>Leaders unavailable</div>";
+  }
 
 }
 
-test();
+load();
 
 </script>
 
