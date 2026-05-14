@@ -49,22 +49,22 @@ h1 {
 
 .league-title {
   font-weight: bold;
-  font-size: 16px;
+  font-size: 18px;
   margin-top: 20px;
   border-bottom: 2px solid #2a2f3a;
-  padding-bottom: 5px;
+  padding-bottom: 6px;
 }
 
 .division-block {
   background: #1c2230;
   border: 1px solid #2a2f3a;
-  margin-top: 10px;
+  margin-top: 12px;
   padding: 10px;
 }
 
 .division-title {
   font-weight: bold;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   border-bottom: 1px solid #2a2f3a;
   padding-bottom: 4px;
 }
@@ -140,6 +140,10 @@ async function load() {
   const standingsURL =
     `https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${yyyy}`;
 
+  const scoresDiv = document.getElementById("scores");
+  const standingsDiv = document.getElementById("standings");
+  const leadersDiv = document.getElementById("leaders");
+
   // ---------------- SCORES ----------------
   try {
 
@@ -164,16 +168,26 @@ async function load() {
         </div>
       `;
 
-      document.getElementById("scores").appendChild(card);
+      scoresDiv.appendChild(card);
 
     });
 
   } catch {
-    document.getElementById("scores").innerHTML =
-      "<div class='card'>Scores unavailable</div>";
+    scoresDiv.innerHTML = "<div class='card'>Scores unavailable</div>";
   }
 
-  // ---------------- HARD-MAPPED STANDINGS (FIXED DIVISIONS) ----------------
+  // ---------------- STANDINGS (FULL CONTROLLED STRUCTURE) ----------------
+
+  const divisionStructure = {
+    "American League East": [],
+    "American League Central": [],
+    "American League West": [],
+    "National League East": [],
+    "National League Central": [],
+    "National League West": [],
+    "American League Wild Card": [],
+    "National League Wild Card": []
+  };
 
   try {
 
@@ -182,80 +196,85 @@ async function load() {
 
     const records = data.records || [];
 
-    const standingsDiv = document.getElementById("standings");
-
-    // HARD MAP DIVISIONS (this fixes your problem permanently)
-    const divisionMap = {
-      "American League East": [],
-      "American League Central": [],
-      "American League West": [],
-      "National League East": [],
-      "National League Central": [],
-      "National League West": [],
-      "American League Wild Card": [],
-      "National League Wild Card": []
-    };
-
     records.forEach(r => {
 
       const league = r.league?.name || "";
-      const div = r.division?.name || "";
+      const division = r.division?.name || "";
       const type = r.standingsType || "";
 
-      let key = league + " " + div;
+      const teams = r.teamRecords || [];
+
+      let key = league + " " + division;
 
       if (type === "wildCardStandings") {
         key = league + " Wild Card";
       }
 
-      if (!divisionMap[key]) divisionMap[key] = [];
+      if (!divisionStructure[key]) divisionStructure[key] = [];
 
-      divisionMap[key].push(...(r.teamRecords || []));
-
-    });
-
-    Object.keys(divisionMap).forEach(divName => {
-
-      if (!divisionMap[divName].length) return;
-
-      const block = document.createElement("div");
-      block.className = "division-block";
-
-      const title = document.createElement("div");
-      title.className = "division-title";
-      title.innerText = divName;
-
-      block.appendChild(title);
-
-      divisionMap[divName].forEach(t => {
-
-        const row = document.createElement("div");
-        row.className = "stand-row";
-
-        const gb =
-          t.divisionGamesBack ??
-          t.wildCardGamesBack ??
-          "-";
-
-        row.innerHTML = `
-          <span>${t.team.name}</span>
-          <span>${t.wins}-${t.losses} (${gb} GB)</span>
-        `;
-
-        block.appendChild(row);
-
-      });
-
-      standingsDiv.appendChild(block);
+      divisionStructure[key].push(...teams);
 
     });
 
   } catch {
-    document.getElementById("standings").innerHTML =
-      "<div class='card'>Standings unavailable</div>";
+    standingsDiv.innerHTML = "<div class='card'>Standings unavailable</div>";
   }
 
-  // ---------------- LEAGUE LEADERS (UNCHANGED STABLE VERSION) ----------------
+  // RENDER STANDINGS CLEANLY (NO BUNCHING EVER)
+
+  const leagues = ["American League", "National League"];
+
+  leagues.forEach(leagueName => {
+
+    const leagueBlock = document.createElement("div");
+
+    const title = document.createElement("div");
+    title.className = "league-title";
+    title.innerText = leagueName;
+
+    leagueBlock.appendChild(title);
+
+    Object.keys(divisionStructure)
+      .filter(d => d.startsWith(leagueName))
+      .forEach(divName => {
+
+        const block = document.createElement("div");
+        block.className = "division-block";
+
+        const divTitle = document.createElement("div");
+        divTitle.className = "division-title";
+        divTitle.innerText = divName;
+
+        block.appendChild(divTitle);
+
+        divisionStructure[divName].forEach(t => {
+
+          const row = document.createElement("div");
+          row.className = "stand-row";
+
+          const gb =
+            t.divisionGamesBack ??
+            t.wildCardGamesBack ??
+            "-";
+
+          row.innerHTML = `
+            <span>${t.team.name}</span>
+            <span>${t.wins}-${t.losses} (${gb} GB)</span>
+          `;
+
+          block.appendChild(row);
+
+        });
+
+        leagueBlock.appendChild(block);
+
+      });
+
+    standingsDiv.appendChild(leagueBlock);
+
+  });
+
+  // ---------------- LEAGUE LEADERS (UNCHANGED STABLE) ----------------
 
   const leaderEndpoints = [
     { title: "Batting Average", group: "hitting", stat: "avg", type: "avg" },
@@ -266,8 +285,6 @@ async function load() {
     { title: "ERA", group: "pitching", stat: "era", type: "float" },
     { title: "WHIP", group: "pitching", stat: "whip", type: "float" }
   ];
-
-  const leadersDiv = document.getElementById("leaders");
 
   for (const cat of leaderEndpoints) {
 
