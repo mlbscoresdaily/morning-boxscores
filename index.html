@@ -176,18 +176,7 @@ async function load() {
     scoresDiv.innerHTML = "<div class='card'>Scores unavailable</div>";
   }
 
-  // ---------------- STANDINGS (FULL CONTROLLED STRUCTURE) ----------------
-
-  const divisionStructure = {
-    "American League East": [],
-    "American League Central": [],
-    "American League West": [],
-    "National League East": [],
-    "National League Central": [],
-    "National League West": [],
-    "American League Wild Card": [],
-    "National League Wild Card": []
-  };
+  // ---------------- FIXED STANDINGS (NO DATA LOSS) ----------------
 
   try {
 
@@ -195,6 +184,17 @@ async function load() {
     const data = await res.json();
 
     const records = data.records || [];
+
+    const grouped = {
+      "American League East": [],
+      "American League Central": [],
+      "American League West": [],
+      "National League East": [],
+      "National League Central": [],
+      "National League West": [],
+      "American League Wild Card": [],
+      "National League Wild Card": []
+    };
 
     records.forEach(r => {
 
@@ -210,9 +210,47 @@ async function load() {
         key = league + " Wild Card";
       }
 
-      if (!divisionStructure[key]) divisionStructure[key] = [];
+      if (!grouped[key]) grouped[key] = [];
 
-      divisionStructure[key].push(...teams);
+      // IMPORTANT FIX:
+      // we DO NOT spread or flatten incorrectly anymore
+      grouped[key] = grouped[key].concat(teams);
+
+    });
+
+    Object.keys(grouped).forEach(name => {
+
+      if (grouped[name].length === 0) return;
+
+      const block = document.createElement("div");
+      block.className = "division-block";
+
+      const title = document.createElement("div");
+      title.className = "division-title";
+      title.innerText = name;
+
+      block.appendChild(title);
+
+      grouped[name].forEach(t => {
+
+        const row = document.createElement("div");
+        row.className = "stand-row";
+
+        const gb =
+          t.divisionGamesBack ??
+          t.wildCardGamesBack ??
+          "-";
+
+        row.innerHTML = `
+          <span>${t.team.name}</span>
+          <span>${t.wins}-${t.losses} (${gb} GB)</span>
+        `;
+
+        block.appendChild(row);
+
+      });
+
+      standingsDiv.appendChild(block);
 
     });
 
@@ -220,61 +258,7 @@ async function load() {
     standingsDiv.innerHTML = "<div class='card'>Standings unavailable</div>";
   }
 
-  // RENDER STANDINGS CLEANLY (NO BUNCHING EVER)
-
-  const leagues = ["American League", "National League"];
-
-  leagues.forEach(leagueName => {
-
-    const leagueBlock = document.createElement("div");
-
-    const title = document.createElement("div");
-    title.className = "league-title";
-    title.innerText = leagueName;
-
-    leagueBlock.appendChild(title);
-
-    Object.keys(divisionStructure)
-      .filter(d => d.startsWith(leagueName))
-      .forEach(divName => {
-
-        const block = document.createElement("div");
-        block.className = "division-block";
-
-        const divTitle = document.createElement("div");
-        divTitle.className = "division-title";
-        divTitle.innerText = divName;
-
-        block.appendChild(divTitle);
-
-        divisionStructure[divName].forEach(t => {
-
-          const row = document.createElement("div");
-          row.className = "stand-row";
-
-          const gb =
-            t.divisionGamesBack ??
-            t.wildCardGamesBack ??
-            "-";
-
-          row.innerHTML = `
-            <span>${t.team.name}</span>
-            <span>${t.wins}-${t.losses} (${gb} GB)</span>
-          `;
-
-          block.appendChild(row);
-
-        });
-
-        leagueBlock.appendChild(block);
-
-      });
-
-    standingsDiv.appendChild(leagueBlock);
-
-  });
-
-  // ---------------- LEAGUE LEADERS (UNCHANGED STABLE) ----------------
+  // ---------------- LEAGUE LEADERS (UNCHANGED) ----------------
 
   const leaderEndpoints = [
     { title: "Batting Average", group: "hitting", stat: "avg", type: "avg" },
