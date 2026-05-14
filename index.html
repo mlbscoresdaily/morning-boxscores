@@ -328,35 +328,42 @@ async function loadMLBData() {
 
   });
 
-  standingsData.records.forEach(division => {
+standingsData.records.forEach(division => {
 
-    const divisionDiv = document.createElement('div');
+  const divisionDiv = document.createElement('div');
 
-    divisionDiv.className = 'division';
+  divisionDiv.className = 'division';
 
-    let rows = '';
+  let divisionName = division.division.name;
 
-    division.teamRecords.forEach(team => {
+  divisionName = divisionName
+    .replace('American League', 'AL')
+    .replace('National League', 'NL');
 
-      rows += `
-        <div class="standing-row">
-          <span>${team.team.name}</span>
-          <span>${team.wins}-${team.losses}</span>
-        </div>
-      `;
-    });
+  let rows = '';
 
-    divisionDiv.innerHTML = `
-      <div class="division-name">
-        ${division.division.name}
+  division.teamRecords.forEach(team => {
+
+    rows += `
+      <div class="standing-row">
+        <span>${team.team.name}</span>
+        <span>${team.wins}-${team.losses}</span>
       </div>
-
-      ${rows}
     `;
 
-    standingsDiv.appendChild(divisionDiv);
-
   });
+
+  divisionDiv.innerHTML = `
+    <div class="division-name">
+      ${divisionName}
+    </div>
+
+    ${rows}
+  `;
+
+  standingsDiv.appendChild(divisionDiv);
+
+});
 
 }
 
