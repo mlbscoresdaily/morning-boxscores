@@ -15,39 +15,35 @@
 
 <style>
 
-* {
-  box-sizing: border-box;
-}
-
 body {
   margin: 0;
-  padding: 20px;
+  padding: 18px;
   background: #e9e1cf;
   font-family: 'IBM Plex Mono', monospace;
   color: #171717;
 }
 
 .page {
-  max-width: 760px;
+  max-width: 820px;
   margin: auto;
   background: #f8f4ea;
-  padding: 28px 24px 60px;
-  border: 1px solid rgba(0,0,0,0.1);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 20px 40px rgba(0,0,0,0.08);
+  padding: 28px 22px 60px;
+  border: 1px solid rgba(0,0,0,0.12);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08), 0 22px 50px rgba(0,0,0,0.08);
 }
 
 .masthead {
   text-align: center;
   border-bottom: 3px double #111;
-  padding-bottom: 24px;
-  margin-bottom: 40px;
+  padding-bottom: 20px;
+  margin-bottom: 35px;
 }
 
 .date {
   font-size: 0.8rem;
   letter-spacing: 3px;
-  opacity: 0.6;
-  margin-bottom: 12px;
+  opacity: 0.65;
+  margin-bottom: 10px;
 }
 
 h1 {
@@ -57,32 +53,32 @@ h1 {
 }
 
 .tagline {
-  margin-top: 16px;
+  margin-top: 12px;
+  opacity: 0.6;
   font-style: italic;
-  opacity: 0.65;
 }
 
 .section-title {
-  margin-top: 40px;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
+  margin-top: 35px;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
   border-bottom: 1px solid rgba(0,0,0,0.15);
-  font-size: 1.1rem;
   letter-spacing: 1px;
+  font-size: 1.05rem;
 }
 
 .game-card {
   background: rgba(255,255,255,0.5);
   border: 1px solid rgba(0,0,0,0.08);
   border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 14px;
+  padding: 14px;
+  margin-bottom: 12px;
 }
 
 .team-row {
   display: flex;
   justify-content: space-between;
-  padding: 6px 0;
+  padding: 5px 0;
 }
 
 .team-name {
@@ -90,26 +86,26 @@ h1 {
 }
 
 .score {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: bold;
 }
 
 .status {
-  margin-top: 12px;
-  padding-top: 10px;
+  margin-top: 10px;
+  padding-top: 8px;
   border-top: 1px dashed rgba(0,0,0,0.15);
   opacity: 0.6;
   font-size: 0.8rem;
 }
 
 .division {
-  margin-bottom: 28px;
+  margin-bottom: 26px;
 }
 
 .division-name {
   font-family: 'Playfair Display', serif;
   font-size: 1.2rem;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   border-bottom: 1px solid rgba(0,0,0,0.15);
   padding-bottom: 6px;
 }
@@ -117,28 +113,51 @@ h1 {
 .standing-row {
   display: flex;
   justify-content: space-between;
-  padding: 6px 0;
+  padding: 5px 0;
   border-bottom: 1px dotted rgba(0,0,0,0.1);
-  font-size: 0.92rem;
+  font-size: 0.9rem;
+}
+
+.leaders-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.leader-box {
+  background: rgba(255,255,255,0.55);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.leader-title {
+  font-weight: bold;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+
+.leader-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  padding: 3px 0;
 }
 
 .footer {
-  margin-top: 60px;
+  margin-top: 50px;
   text-align: center;
   opacity: 0.45;
   font-size: 0.8rem;
 }
 
-.error {
-  opacity: 0.6;
-  padding: 10px 0;
-}
-
-@media (max-width: 640px) {
-  body { padding: 10px; }
-  .page { padding: 20px 16px 40px; }
-  h1 { font-size: 2.2rem; }
-  .score { font-size: 1.2rem; }
+@media (max-width: 700px) {
+  .leaders-grid {
+    grid-template-columns: 1fr;
+  }
+  h1 {
+    font-size: 2.2rem;
+  }
 }
 
 </style>
@@ -150,15 +169,9 @@ h1 {
 <div class="page">
 
   <div class="masthead">
-
     <div class="date" id="date"></div>
-
     <h1>The Morning Box Scores</h1>
-
-    <div class="tagline">
-      Yesterday’s baseball. Nothing else.
-    </div>
-
+    <div class="tagline">Yesterday’s baseball. Nothing else.</div>
   </div>
 
   <div class="section-title">FINAL SCORES</div>
@@ -167,9 +180,10 @@ h1 {
   <div class="section-title">STANDINGS</div>
   <div id="standings"></div>
 
-  <div class="footer">
-    Printed digitally each morning with coffee.
-  </div>
+  <div class="section-title">LEAGUE LEADERS</div>
+  <div id="leaders" class="leaders-grid"></div>
+
+  <div class="footer">Printed digitally each morning with coffee.</div>
 
 </div>
 
@@ -181,17 +195,14 @@ async function load() {
   yesterday.setDate(yesterday.getDate() - 1);
 
   const yyyy = yesterday.getFullYear();
-  const mm = String(yesterday.getMonth() + 1).padStart(2,'0');
+  const mm = String(yesterday.getMonth()+1).padStart(2,'0');
   const dd = String(yesterday.getDate()).padStart(2,'0');
 
   const apiDate = `${yyyy}-${mm}-${dd}`;
 
   document.getElementById('date').innerText =
     yesterday.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
+      weekday:'long', month:'long', day:'numeric', year:'numeric'
     }).toUpperCase();
 
   const scoresURL =
@@ -200,11 +211,16 @@ async function load() {
   const standingsURL =
     `https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=${yyyy}`;
 
+  const leadersURL =
+    `https://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=homeRuns,battingAverage,rbi,stolenBases,wins,earnedRunAverage,whip&season=${yyyy}`;
+
   const scoresDiv = document.getElementById('scores');
   const standingsDiv = document.getElementById('standings');
+  const leadersDiv = document.getElementById('leaders');
 
   scoresDiv.innerHTML = '';
   standingsDiv.innerHTML = '';
+  leadersDiv.innerHTML = '';
 
   // ---------------- SCORES ----------------
   try {
@@ -216,27 +232,19 @@ async function load() {
 
       data.dates[0].games.forEach(g => {
 
-        const away = g.teams.away.team.name;
-        const home = g.teams.home.team.name;
-
-        const a = g.teams.away.score ?? 0;
-        const h = g.teams.home.score ?? 0;
-
-        const status = g.status.detailedState;
-
         const card = document.createElement('div');
         card.className = 'game-card';
 
         card.innerHTML = `
           <div class="team-row">
-            <div class="team-name">${away}</div>
-            <div class="score">${a}</div>
+            <div>${g.teams.away.team.name}</div>
+            <div class="score">${g.teams.away.score ?? 0}</div>
           </div>
           <div class="team-row">
-            <div class="team-name">${home}</div>
-            <div class="score">${h}</div>
+            <div>${g.teams.home.team.name}</div>
+            <div class="score">${g.teams.home.score ?? 0}</div>
           </div>
-          <div class="status">${status}</div>
+          <div class="status">${g.status.detailedState}</div>
         `;
 
         scoresDiv.appendChild(card);
@@ -244,11 +252,11 @@ async function load() {
       });
 
     } else {
-      scoresDiv.innerHTML = `<div class="error">No games found.</div>`;
+      scoresDiv.innerHTML = "<div>No games found.</div>";
     }
 
   } catch(e) {
-    scoresDiv.innerHTML = `<div class="error">Scores unavailable.</div>`;
+    scoresDiv.innerHTML = "<div>Scores unavailable.</div>";
   }
 
   // ---------------- STANDINGS ----------------
@@ -257,47 +265,75 @@ async function load() {
     const res = await fetch(standingsURL);
     const data = await res.json();
 
-    if (data.records?.length) {
+    data.records?.forEach(div => {
 
-      data.records.forEach(div => {
+      const block = document.createElement('div');
+      block.className = 'division';
 
-        const block = document.createElement('div');
-        block.className = 'division';
+      const name =
+        div.division.name
+          .replace('American League','AL')
+          .replace('National League','NL');
 
-        const name =
-          div.division.name
-            .replace('American League','AL')
-            .replace('National League','NL');
+      block.innerHTML = `<div class="division-name">${name}</div>`;
 
-        block.innerHTML =
-          `<div class="division-name">${name}</div>`;
+      div.teamRecords.forEach(t => {
 
-        div.teamRecords.forEach(t => {
+        const row = document.createElement('div');
+        row.className = 'standing-row';
 
-          const row = document.createElement('div');
-          row.className = 'standing-row';
+        row.innerHTML = `
+          <span>${t.team.name}</span>
+          <span>${t.wins}-${t.losses}</span>
+        `;
 
-          row.innerHTML = `
-            <span>${t.team.name}</span>
-            <span>${t.wins}-${t.losses}</span>
-          `;
-
-          block.appendChild(row);
-
-        });
-
-        standingsDiv.appendChild(block);
+        block.appendChild(row);
 
       });
 
-    } else {
-      standingsDiv.innerHTML =
-        `<div class="error">Standings unavailable.</div>`;
-    }
+      standingsDiv.appendChild(block);
+
+    });
 
   } catch(e) {
-    standingsDiv.innerHTML =
-      `<div class="error">Standings unavailable.</div>`;
+    standingsDiv.innerHTML = "<div>Standings unavailable.</div>";
+  }
+
+  // ---------------- LEADERS ----------------
+  try {
+
+    const res = await fetch(leadersURL);
+    const data = await res.json();
+
+    const cats = data.leagueLeaderCategories || [];
+
+    cats.forEach(cat => {
+
+      const box = document.createElement('div');
+      box.className = 'leader-box';
+
+      box.innerHTML = `<div class="leader-title">${cat.displayName}</div>`;
+
+      (cat.leaders || []).slice(0,5).forEach(p => {
+
+        const row = document.createElement('div');
+        row.className = 'leader-row';
+
+        row.innerHTML = `
+          <span>${p.person.fullName}</span>
+          <span>${p.value}</span>
+        `;
+
+        box.appendChild(row);
+
+      });
+
+      leadersDiv.appendChild(box);
+
+    });
+
+  } catch(e) {
+    leadersDiv.innerHTML = "<div>Leaders unavailable.</div>";
   }
 
 }
