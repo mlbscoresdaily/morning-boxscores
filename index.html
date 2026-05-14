@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>The Morning Box Scores</title>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Georgia, serif;
+      background: #f4f1ea;
+      color: #111;
+      max-width: 700px;
+      margin: auto;
+      line-height: 1.5;
+    }
+
+    h1 {
+      text-align: center;
+      border-bottom: 2px solid black;
+      padding-bottom: 10px;
+      margin-bottom: 30px;
+      font-size: 2rem;
+    }
+
+    .subtitle {
+      text-align: center;
+      margin-bottom: 40px;
+      font-style: italic;
+      color: #555;
+    }
+
+    .game {
+      border-bottom: 1px solid #999;
+      padding: 15px 0;
+    }
+
+    .teams {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+
+    .details {
+      margin-top: 8px;
+      color: #444;
+      font-size: 0.95rem;
+    }
+
+    .footer {
+      margin-top: 50px;
+      text-align: center;
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 15px;
+      }
+
+      .teams {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>The Morning Box Scores</h1>
+
+  <div class="subtitle">
+    Yesterday’s baseball. Nothing else.
+  </div>
+
+  <div id="scores"></div>
+
+  <div class="footer">
+    Printed digitally each morning.
+  </div>
+
+  <script>
+    async function loadScores() {
+
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      const yyyy = yesterday.getFullYear();
+      const mm = String(yesterday.getMonth() + 1).padStart(2, '0');
+      const dd = String(yesterday.getDate()).padStart(2, '0');
+
+      const date = `${yyyy}-${mm}-${dd}`;
+
+      const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}`;
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      const scoresDiv = document.getElementById('scores');
+
+      if (!data.dates.length) {
+        scoresDiv.innerHTML = "<p>No games found.</p>";
+        return;
+      }
+
+      const games = data.dates[0].games;
+
+      games.forEach(game => {
+
+        const away = game.teams.away.team.name;
+        const home = game.teams.home.team.name;
+
+        const awayScore = game.teams.away.score ?? "-";
+        const homeScore = game.teams.home.score ?? "-";
+
+        const status = game.status.detailedState;
+
+        const gameDiv = document.createElement('div');
+        gameDiv.className = 'game';
+
+        gameDiv.innerHTML = `
+          <div class="teams">
+            <span>${away}</span>
+            <span>${awayScore}</span>
+          </div>
+
+          <div class="teams">
+            <span>${home}</span>
+            <span>${homeScore}</span>
+          </div>
+
+          <div class="details">
+            ${status}
+          </div>
+        `;
+
+        scoresDiv.appendChild(gameDiv);
+
+      });
+    }
+
+    loadScores();
+  </script>
+
+</body>
+</html>
